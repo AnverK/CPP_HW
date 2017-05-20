@@ -1,0 +1,3 @@
+/mnt/d/QTProjects/C++/Task1/CMakeFiles/multiply.dir
+/mnt/d/QTProjects/C++/Task1/CMakeFiles/subtract.dir
+/mnt/d/QTProjects/C++/Task1/CMakeFiles/subtract2.dir

@@ -1,0 +1,1 @@
+/usr/bin/ld CMakeFiles/subtract2.dir/subtract2.asm.o -o subtract2

@@ -1,0 +1,1 @@
+/mnt/d/QTProjects/C++/Task2_64/cpp-course/bigint/CMakeFiles/big_integer_testing.dir

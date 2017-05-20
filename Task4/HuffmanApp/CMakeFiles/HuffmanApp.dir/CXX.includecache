@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/d/QTProjects/C++/Task4/HuffmanApp/huffman.h
+fstream
+-
+vector
+-
+list
+-
+queue
+-
+iostream
+-
+string.h
+-
+
+/mnt/d/QTProjects/C++/Task4/HuffmanApp/main.cpp
+iostream
+-
+huffman.h
+/mnt/d/QTProjects/C++/Task4/HuffmanApp/huffman.h
+ctime
+-
+string.h
+-
+
