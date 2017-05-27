@@ -1,1 +1,0 @@
-/usr/bin/c++    -Wall -std=c++11 -pedantic    CMakeFiles/HuffmanApp.dir/huffman.cpp.o CMakeFiles/HuffmanApp.dir/main.cpp.o  -o HuffmanApp -rdynamic -lpthread 

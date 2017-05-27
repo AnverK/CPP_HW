@@ -1,0 +1,46 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/d/QTProjects/C++/20170527/Task4/library/binary_tree.cpp
+binary_tree.h
+/mnt/d/QTProjects/C++/20170527/Task4/library/binary_tree.h
+iostream
+-
+
+/mnt/d/QTProjects/C++/20170527/Task4/library/binary_tree.h
+vector
+-
+stdint.h
+-
+
+/mnt/d/QTProjects/C++/20170527/Task4/library/compression.cpp
+compression.h
+/mnt/d/QTProjects/C++/20170527/Task4/library/compression.h
+iostream
+-
+algorithm
+-
+
+/mnt/d/QTProjects/C++/20170527/Task4/library/compression.h
+binary_tree.h
+/mnt/d/QTProjects/C++/20170527/Task4/library/binary_tree.h
+list
+-
+
+/mnt/d/QTProjects/C++/20170527/Task4/library/decompression.cpp
+decompression.h
+/mnt/d/QTProjects/C++/20170527/Task4/library/decompression.h
+iostream
+-
+
+/mnt/d/QTProjects/C++/20170527/Task4/library/decompression.h
+vector
+-
+binary_tree.h
+/mnt/d/QTProjects/C++/20170527/Task4/library/binary_tree.h
+

@@ -1,0 +1,2 @@
+/usr/bin/ar cr liblibrary.a  CMakeFiles/library.dir/compression.cpp.o CMakeFiles/library.dir/decompression.cpp.o CMakeFiles/library.dir/binary_tree.cpp.o
+/usr/bin/ranlib liblibrary.a

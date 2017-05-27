@@ -10,8 +10,6 @@ _start:
                 mov             rdi, rsp
                 call            read_long
                 lea             rsi, [rsp + 128 * 8]
-				call 			compare				
-				; теперь rsi указывает на начало большего из двух чисел, а rdi на меньшее
 				
 				call			not_long
 				mov				rax, 1

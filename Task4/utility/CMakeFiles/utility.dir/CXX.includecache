@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/d/QTProjects/C++/20170527/Task4/utility/main.cpp
+iostream
+-
+fstream
+-
+compression.h
+/mnt/d/QTProjects/C++/20170527/Task4/utility/compression.h
+decompression.h
+/mnt/d/QTProjects/C++/20170527/Task4/utility/decompression.h
+ctime
+-
+

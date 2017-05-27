@@ -11,8 +11,8 @@ _start:
                 call            read_long
                 lea             rsi, [rsp + 128 * 8]
 				
-				call			compare
 				XCHG			rsi, rdi
+				
                 call            subtract_long_long
 
                 call            write_long
@@ -22,41 +22,6 @@ _start:
 
                 jmp             exit
 				
-swap:
-				XCHG			rsi, rdi
-				mov				al, 0x2d
-				call			write_char
-				ret
-				
-				
-compare:
-                push            rdi
-                push            rsi
-                push            rcx		
-				
-.loop:
-                mov             rax, [rsi]
-				mov				rbx, [rdi]		
-				cmp				rax, rbx
-				jg				.first
-				cmp				rax, rbx
-				jl				.second
-				lea             rsi, [rsi + 8]
-                lea             rdi, [rdi + 8]
-				dec 			rcx
-				jnz				.loop
-
-.first:
-				pop             rcx
-                pop             rsi
-                pop             rdi
-                ret
-.second:
-				pop             rcx
-                pop             rsi
-                pop             rdi
-				call			swap
-                ret
 
 ; subtracts two long number
 ;    rdi -- address of operand #1 (long number)

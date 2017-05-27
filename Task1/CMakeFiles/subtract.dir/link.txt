@@ -1,1 +1,0 @@
-/usr/bin/ld CMakeFiles/subtract.dir/subtract.asm.o -o subtract

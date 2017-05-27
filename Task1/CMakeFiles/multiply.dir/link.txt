@@ -1,1 +1,0 @@
-/usr/bin/ld CMakeFiles/multiply.dir/multiply.asm.o -o multiply

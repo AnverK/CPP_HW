@@ -1,0 +1,1 @@
+/mnt/d/QTProjects/C++/20170527/Task4/library/CMakeFiles/library.dir
