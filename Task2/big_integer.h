@@ -61,6 +61,8 @@ private:
     void swap(big_integer &a);
     friend int compare(const std::vector<uint32> &a, const std::vector<uint32> &b);
     friend int compare(big_integer const& a, big_integer const& b, bool abs);
+    friend bool compare_equal_vector(const std::vector<uint32> &a, const std::vector<uint32> &b);
+    void subtract_equal_vector(std::vector<unsigned int> &a, const std::vector<unsigned int> &b);
 
     big_integer(std::vector <uint32> const& obj, bool sign);
 

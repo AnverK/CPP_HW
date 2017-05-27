@@ -102,7 +102,6 @@ void decompress(string inputFileName, string outputFileName)
     uint64_t was_read = input.tellg();
     vector <uint8_t> out;
 
-    cout << (double) clock()/1000 << endl;
     while(was_read < input_file_length)
     {
         in.resize(min(SIZE_BLOCK, input_file_length-was_read));
@@ -113,7 +112,6 @@ void decompress(string inputFileName, string outputFileName)
         out.clear();
         was_read += SIZE_BLOCK;
     }
-    cout << (double) clock()/1000 << endl;
 
     input.close();
     output.close();

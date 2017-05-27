@@ -402,7 +402,7 @@ void big_integer::add(std::vector<uint32> &res, const std::vector<uint32> &a, co
 void big_integer::subtract(std::vector<uint32> &res, const std::vector<uint32> &a, const std::vector<uint32> &b)
 {
     size_t length = std::max(a.size(), b.size());
-    res.resize(length);
+    res.resize(length); 
     uint64 carry = 0;
     for (size_t i=0; i<b.size() || carry; ++i) {
         uint64 tmp = (uint64) carry + (i < b.size() ? b[i] : 0);
@@ -441,7 +441,7 @@ void big_integer::multiply(std::vector<unsigned int> &res, const std::vector<uns
 
 void big_integer::long_mul_short(std::vector<unsigned int> &res, const std::vector<unsigned int> &a, const unsigned int b)
 {
-    res.resize(a.size());
+    res.resize(a.size() + 1);
     uint32 carry = 0;
     for(size_t i = 0; i < a.size(); i++)
     {
@@ -449,8 +449,7 @@ void big_integer::long_mul_short(std::vector<unsigned int> &res, const std::vect
         res[i] = tmp % BASE;
         carry = tmp / BASE;
     }
-    res.push_back(carry);
-    clear_zero(res);
+    res[a.size()] = carry;
 }
 
 void big_integer::long_div_short(std::vector<unsigned int> &res, const std::vector<unsigned int> &a, const unsigned int b)
@@ -477,10 +476,42 @@ void big_integer::long_mod_short2(std::vector<unsigned int> &res, const std::vec
     res.push_back(carry);
 }
 
+bool compare_equal_vector(const std::vector<uint32> &a, const std::vector<uint32> &b)
+{
+    for (size_t i = a.size(); i > 0; i--)
+    {
+        if (a[i - 1] != b[i - 1])
+        {
+            return a[i - 1] < b[i - 1];
+        }
+    }
+    return 0;
+}
+
+void big_integer::subtract_equal_vector(std::vector<unsigned int> &a, const std::vector<unsigned int> &b)
+{
+    uint64 carry = 0;
+    for (size_t i=0; i<b.size() || carry; ++i)
+    {
+        uint64 tmp = (uint64) carry + (i < b.size() ? b[i] : 0);
+        if(a[i] < tmp)
+        {
+            a[i] = (uint64)BASE - tmp + a[i];
+            carry = 1;
+        }
+        else
+        {
+            carry = 0;
+            a[i] -= tmp;
+        }
+    }
+}
+
 void big_integer::divide(std::vector<uint32> &res, std::vector<uint32> const &a, std::vector<uint32> const &b)
 {
     int sign = compare(a, b);
     res.clear();
+
     if(sign < 0)
     {
         res.push_back(0);
@@ -497,37 +528,41 @@ void big_integer::divide(std::vector<uint32> &res, std::vector<uint32> const &a,
         return;
     }
 
-//    res.resize(a.size());
     uint32 d = (uint32)(BASE / (b[b.size() - 1] + 1));
     std::vector<uint32> u(a), v(b);
     long_mul_short(u, a, d);
     long_mul_short(v, b, d);
-    res.resize(u.size() - v.size() + 1);
-    size_t n = v.size();
-    for(size_t j = u.size() - v.size(); j < MAX_UINT64; j--)
-    {
-        uint64 tmp = (uint64) ((uint64)(n + j < u.size() ? u[n + j] : 0)* BASE + (n + j - 1 < u.size() ? u[n + j - 1] : 0)) / v[n - 1];
-        res[j] = (uint32)std::min(tmp, BASE - 1);
-        std::vector <uint32> temp_vector;
-        multiply(temp_vector, pow_base((uint32)j), v);
-        long_mul_short(temp_vector, temp_vector, res[j]);
+    clear_zero(u);
+    clear_zero(v);
+    size_t n = u.size(), m = v.size(), len = n - m + 1;
+    res.resize(len);
+    std::vector <uint32> dividend(m+1), divider(m+1);
 
-        if(compare(u, temp_vector) >= 0)
+    for(size_t i = 0; i < m; i++)
+    {
+        dividend[i] = u[n + i - m];
+    }
+
+    dividend[m] = n < u.size() ? u[n] : 0;
+    for(size_t i = 0; i < len; i++)
+    {
+        dividend[0] = u[n - m - i];
+        size_t cur_pos = len - 1 - i;
+
+        uint32 tmp = std::min( (uint64) ((uint64)(m < dividend.size() ? dividend[m] : 0)* BASE + (m - 1 < dividend.size() ? dividend[m - 1] : 0)) / v.back(), BASE - 1);
+
+        long_mul_short(divider, v, tmp);
+
+        while(compare_equal_vector(dividend, divider))
         {
-            subtract(u, u, temp_vector);
+            long_mul_short(divider, v, --tmp);
         }
-        else
+        subtract_equal_vector(dividend, divider);
+        for(size_t j = m; j > 0; j--)
         {
-            subtract(u, temp_vector, u);
-            multiply(temp_vector, pow_base((uint32)j), v);
-            while(compare(u, temp_vector) > 0)
-            {
-                res[j]--;
-                subtract(u, u, temp_vector);
-            }
-            subtract(u, temp_vector, u);
-            res[j]--;
+            dividend[j] = dividend[j - 1];
         }
+        res[cur_pos] = tmp;
     }
     clear_zero(res);
 }

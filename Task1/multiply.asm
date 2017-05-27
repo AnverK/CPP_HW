@@ -22,8 +22,6 @@ _start:
                 jmp             exit
 
 mul2_long_long:
-
-				
 				
 				push			rax
                 push            rdi
@@ -58,11 +56,11 @@ mul2_long_long:
 				call			mul_long_short		; попорчен rdi -- там теперь первый множитель, умноженный на rbx лежит, но нас это не смущает, ибо rbx есть
 				pop				rbx
 				
-				pop				rdx					; 128-rdx -- число выполненных итераций				
-				push			rdx					; кладём в стек обратно
+				mov				rdx, [rsp]
 				
 				push			rbx					; копию начала числа сохраняем
 				cmp				rdx, rcx
+				
 				jge				.ok
 .mul_2:			
 				mov				rbx, 9223372036854775808			; 2^63
