@@ -2,7 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
-
+#include <limits>
 using std::cout;
 using std::endl;
 
@@ -19,8 +19,16 @@ big_integer::big_integer()
 
 big_integer::big_integer(int n)
 {
-    number.push_back((uint32) abs(n));
-    sign = n < 0;
+    if(n >= 0)
+    {
+        number.push_back((uint32) n);
+        sign = 0;
+    }
+    else
+    {
+        number.push_back(-(uint32)n);
+        sign = 1;
+    }
 }
 
 big_integer::big_integer(std::string const& s)
