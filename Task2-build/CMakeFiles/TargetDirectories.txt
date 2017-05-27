@@ -1,3 +1,0 @@
-D:/QTProjects/C++/CPP_HW/Task2-build/CMakeFiles/big_integer_testing.dir
-D:/QTProjects/C++/CPP_HW/Task2-build/CMakeFiles/edit_cache.dir
-D:/QTProjects/C++/CPP_HW/Task2-build/CMakeFiles/rebuild_cache.dir
