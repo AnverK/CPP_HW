@@ -8,100 +8,167 @@ _start:
                 call            read_long
                 mov             rdi, rsp
                 call            read_long
-                lea             rsi, [rsp + 128 * 8]	
+                lea             rsi, [rsp + 128 * 8]
 				
-				lea				rax, [rsp + 2*128*8]
-				lea				rbx, [rsp + 3*128*8]	
+				; mov				rdx, 1
 				
-				call            mul2_long_long
+				XCHG 			rsi, rdi
+				
+				lea				r15, [rsp + 2*128*8]				; ответ
+				lea				r14, [rsp + 3*128*8]				; копия 2 числа
+				
+				call            mul_long_long
+				
+				XCHG			rdi, r15
+				; mov				rdx, 2
+				; mov				rbx, 1
+				
+				; call			add_with_mul_and_shift
 
+				; call			add_long_long_with_shift
+				
+				; XCHG			rdi, r15
+				
                 call            write_long
                 mov             al, 0x0a
                 call            write_char
 
                 jmp             exit
-
-mul2_long_long:
 				
-				push			rax
-                push            rdi
-                push            rcx
-				
-				XCHG			rax, rdi
-				call			set_zero
-				XCHG			rax, rdi ; теперь в rax начало нашего ответа, ещё и нулёвое, в rdi по-прежнему первый множитель
-				
-				push			rsi
+mul_long_long:
+				push			r15
+				push			r14
 				push			rdi
-				
-				mov				rsi, rdi	; теперь источник копирования это rdi
-				XCHG			rdi, rbx	; теперь копия будет в rbx
-				call			copy_long		
-				XCHG			rbx, rdi	
-				
-				pop				rdi
-				pop				rsi
-				
-				; до этого момента всё идеально (upd. уже везде всё топ)
-.loop:
-
-; rsi -- начало второго множителя 
-; rax -- начало результата
-				
 				push			rcx
-				mov				rcx, 128
+				push			rsi
+				push			rdx
 				
-				push			rbx
-				mov				rbx, [rsi]			; rbx готовится быть умноженным на длинное число (на rdi)				
-				call			mul_long_short		; попорчен rdi -- там теперь первый множитель, умноженный на rbx лежит, но нас это не смущает, ибо rbx есть
-				pop				rbx
+				XCHG			rsi, rdi
+				XCHG			rdi, r14
+				call			copy_long
+				XCHG			rdi, r14
+				XCHG			rsi, rdi
 				
-				mov				rdx, [rsp]
+				; в r14 и rdi лежит первый множитель 
 				
-				push			rbx					; копию начала числа сохраняем
-				cmp				rdx, rcx
+				; храним в r14 первый множитель. В rdi передаём r15. Внутри: первый множитель *= цифра второго. Значит, нужно сохранять
+				; первый множитель, потом восстанавливать его.
 				
-				jge				.ok
-.mul_2:			
-				mov				rbx, 9223372036854775808			; 2^63
-				call			mul_long_short
-				mov				rbx, 2
-				call			mul_long_short						; так умножили rdi в 2^64 раза, то есть на разряд наш
-				inc				rdx						
-				cmp				rdx, rcx
-				jl				.mul_2	
-.ok:			
-				pop				rbx					; копию начала числа возвращаем обратно	
-													; в rdi лежит длинное слагаемое после произведения (rdi = rbx * rdi * 2^(64*(128-rdx))) 
-													; в rcx длина, ок, в rsi надо на текущий результат (rax)
-				push			rsi					; текущий разряд множителя 
+				mov				rdx, 0
+.loop:			
+				mov				rbx, [rsi + 8 * rdx]
 				
-				mov				rsi, rax			; временно пихнули в rsi указатель на ответ
-				call			add_long_long		
 				
-				XCHG			rax, rdi
-				
-				mov				rsi, rbx
+				; XCHG			rdi, r15
+				call			add_with_mul_and_shift	; результат суммируется к r15, а rsi как был, так и остаётся вторым множителем. Но он мб портится
+				; XCHG			rdi, r15
 
-				call			copy_long			; теперь в rdi снова всё как в начале цикла -- длинный множитель				
+				; XCHG			rsi, rdi
+				XCHG			rsi, r14
+				call			copy_long
+				XCHG			rsi, r14
+				; XCHG			rsi, rdi
 				
-				pop				rsi
-				pop				rcx
-				lea             rsi, [rsi + 8]
-				dec				rcx		
+				; XCHG			rdi, r15
+				; call			write_long	
+
+				
+				inc				rdx
+				dec				rcx
+								
 				jnz				.loop
 				
+				pop				rdx
+				pop				rsi
+                pop             rcx
+                pop             rdi
+				pop				r14
+				pop				r15
 				
-				pop				rcx
-				mov				rsi, rax
-				call			copy_long
-				pop rdi
-				pop rax
-				ret
-			
-;	rsi -- source
-;	rdi	-- destination
-;	rcx	-- length			
+                ret 
+
+; D += S*b (сложение со сдвигом, да)
+; rcx -- number length
+; rdx -- shift
+; rbx -- short multiply operand (b)
+; r15 -- adress of current sum (D)
+; rdi -- address of multiplier (S)
+; rcx -- length of long numbers in qwords
+; result:
+; sum is written to r15
+add_with_mul_and_shift:
+				push			r15
+				push            rax
+				push			rdx
+                push            rdi
+                push            rcx
+				push			rsi
+				
+				
+				; XCHG			r15, rdi
+				; call			write_long
+				; XCHG			rsi, rdi
+				call			mul_long_short	
+				; XCHG			rs, rdi	
+				; в rsi содержится результат вызова, то есть тут rsi реально портится, это плоховато, но что поделать
+				
+				
+				
+				; XCHG			rdi, rsi
+				; call			write_long
+				
+                clc
+.loop:
+                mov             rax, [rdi]
+                lea             rdi, [rdi + 8]
+                adc             [r15 + rdx * 8], rax
+                lea             r15, [r15 + 8]
+                dec             rcx
+                jnz             .loop
+				
+				pop				rsi
+                pop             rcx
+                pop             rdi
+				pop 			rdx
+				pop				rax
+				pop				r15
+
+                ret 
+				
+; rcx -- number length
+; rdx -- shift
+; rdi -- address of summand #1 (long number)
+; rsi -- address of summand #2 (long number with shift)
+; rcx -- length of long numbers in qwords
+; result:
+; sum is written to rdi
+add_long_long_with_shift:
+				push            rax
+				push			rdx
+                push            rdi
+                push            rcx
+				push			rsi
+				
+                clc
+.loop:
+                mov             rax, [rsi]
+                lea             rsi, [rsi + 8]
+                adc             [rdi + rdx * 8], rax
+                lea             rdi, [rdi + 8]
+                dec             rcx
+                jnz             .loop
+				
+				pop				rsi
+                pop             rcx
+                pop             rdi
+				pop 			rdx
+				pop				rax
+				
+				ret 
+				
+; rsi -- source
+; rdi	-- destination
+; rcx	-- length			
 copy_long:
 				push			rax
 				push			rdi
