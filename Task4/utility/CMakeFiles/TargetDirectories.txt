@@ -1,1 +1,0 @@
-/mnt/d/QTProjects/C++/20170527/Task4/utility/CMakeFiles/utility.dir
