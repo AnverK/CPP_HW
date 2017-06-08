@@ -7,15 +7,15 @@
 class Compression {
     vector<uint64_t> frequencies;
 
-    list<binary_tree *> trees;
+    list<BinaryTree *> trees;
 
-    vector<vector<char>> table;
+    vector<vector<uint8_t>> table;
 
     uint16_t unique;
 
-    void write_tree_structure(binary_tree *root, vector <uint16_t> &output_block);
+    void write_tree_structure(BinaryTree *root, vector <uint16_t> &output_block);
 
-    void write_tree_leaves(binary_tree *root, vector <uint8_t> &output_block);
+    void write_tree_leaves(BinaryTree *root, vector <uint8_t> &output_block);
 
 public:
     Compression();
@@ -40,7 +40,7 @@ public:
 
     void write_tree_leaves(vector <uint8_t> &output_block);
 
-    void print_tree(binary_tree *root);
+    void print_tree(BinaryTree *root);
 };
 
 #endif

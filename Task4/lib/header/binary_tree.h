@@ -6,30 +6,30 @@
 
 using namespace std;
 
-class binary_tree {
-public:
-    binary_tree *left, *right;
+class BinaryTree {
+private:
+    BinaryTree *left, *right;
     char bit;
     vector<uint8_t> s;
     uint64_t weight;
     uint16_t num;
-    friend void make_code(binary_tree *root, vector<char> &code, vector<vector<char> > &table);
+    friend void make_code(BinaryTree *root, vector<uint8_t> &code, vector<vector<uint8_t> > &table);
 
-    friend void enumerate_tree(binary_tree *root, uint16_t &num);
+    friend void enumerate_tree(BinaryTree *root, uint16_t &num);
 
 public:
-    binary_tree(binary_tree *l, binary_tree *r, vector<uint8_t> &str, uint64_t w);
-    binary_tree();
-    binary_tree(binary_tree *l, binary_tree *r, uint16_t n);
+    BinaryTree(BinaryTree *l, BinaryTree *r, vector<uint8_t> &str, uint64_t w);
+    BinaryTree();
+    BinaryTree(BinaryTree *l, BinaryTree *r, uint16_t n);
 
-    void merge(binary_tree *root1, binary_tree *root2);
+    void merge(BinaryTree *root1, BinaryTree *root2);
 
     void make_tree(vector <uint8_t> const &input_block, uint8_t &num, vector <vector <int> > const &edges, size_t &read_pos);
 
     uint64_t get_weight();
 
-    binary_tree* get_left();
-    binary_tree* get_right();
+    BinaryTree* get_left();
+    BinaryTree* get_right();
     char get_bit();
     uint64_t get_num();
     uint8_t get_sym();

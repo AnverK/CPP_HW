@@ -6,18 +6,21 @@ include_directories(header)
 
 
 set(SOURCES
-                        compression.cpp
-			decompression.cpp
+                        weight_counter.cpp
+                        code_table.cpp
+                        compressor.cpp
+                        decompressor.cpp
                         binary_tree.cpp)
 			
 set(HEADERS
-                        header/compression.h
-                        header/decompression.h
+                        header/weight_counter.h
+                        header/code_table.h
+                        header/compressor.h
+                        header/decompressor.h
                         header/binary_tree.h
                         header/exceptions.h)
 
 set(TEST
-#                    huffman_library_testing
                         huffman_library_testing.cpp
                         gtest/gtest-all.cc
                         gtest/gtest.h

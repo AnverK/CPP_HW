@@ -7,18 +7,18 @@ using namespace std;
 class Decompression {
 private:
 
-    vector <uint8_t> rest;
     vector < vector <int> > edges;
-    binary_tree *root;
-    binary_tree *last_visited;
+    BinaryTree *root;
+    BinaryTree *last_visited;
     uint64_t length;
     uint16_t unique;
     uint64_t read_pos;
     int checked_bits;           //число битов в текущем байте, которые уже просмотрены
     uint64_t first_bit;       //позиция начала последней рассматриваемой последовательности битов во входном блоке
     uint64_t cur_len;
-    void print_tree(binary_tree *root);
-    void make_tree(vector <uint8_t> const &input_block, binary_tree *root, uint8_t &num);
+    void print_tree(BinaryTree *root);
+    void make_tree(vector <uint8_t> const &input_block, BinaryTree *root, uint8_t &num);
+    uint16_t find_symbol(BinaryTree *root, int &used, uint8_t &byte, const vector<uint8_t> &input_block);
 
 
 public:
@@ -37,7 +37,6 @@ public:
     void print_tree();
     void print_edges();
 
-    uint16_t find_symbol(binary_tree *root, int &used, uint8_t &byte, const vector<uint8_t> &input_block);
 };
 
 #endif

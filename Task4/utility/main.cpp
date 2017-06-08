@@ -1,10 +1,12 @@
 #include <iostream>
 #include <fstream>
-#include "compression.h"
-#include "decompression.h"
-#include "exceptions.h"
 #include <ctime>
 #include <string.h>
+
+#include "exceptions.h"
+#include "compressor.h"
+#include "decompressor.h"
+
 
 using namespace std;
 
@@ -22,72 +24,67 @@ const size_t SIZE_BLOCK = 4096;
 
 void compress(string inputFileName, string outputFileName)
 {
-    Compression comp = Compression();
     ifstream input(inputFileName, ios::binary);
 
+    uint64_t length;
     input.seekg(0, ios::end);
-    size_t length = input.tellg();
+    length = input.tellg();
 
-    uint16_t unique;
     input.seekg(0, ios::beg);
 
-    vector<uint8_t> in(SIZE_BLOCK);
     size_t was_read = 0;
+    vector<uint8_t> in(min(SIZE_BLOCK, length-was_read));
+
+    input.read((char *) in.data(), in.size());
+    WeightCounter wc = WeightCounter(in);
+    was_read += in.size();
 
     while(was_read < length)
     {
         in.resize(min(SIZE_BLOCK, length-was_read));
-        input.read((char *) in.data(), min(SIZE_BLOCK, length-was_read));
-        comp.count_frequencies(in);
+        input.read((char *) in.data(), in.size());
+        wc.add_block(in);
         was_read += SIZE_BLOCK;
     }
-    comp.make_list();
-    unique = comp.get_unique();
-    comp.go_through_list();
-    comp.make_table();
 
-    input.seekg(0, ios::beg);
-    was_read = 0;
-    vector <uint8_t> out;
+    CodeTable ct = CodeTable(wc);
 
+    uint16_t unique;
+
+    vector <uint16_t> out16;
+    vector <uint8_t> out8;
+    Compressor comp = Compressor(ct, length, unique, out16, out8);
 
     ofstream output(outputFileName, ios::binary);
 
     output.write((char*)&length, sizeof(length));
     output.write((char*)&unique, sizeof(unique));
-    uint8_t end_bit = 0;
-
-    vector <uint16_t> out16;
-    comp.write_tree_structure(out16);
     output.write((char*)out16.data(), sizeof(uint16_t)*out16.size());
+    output.write((char*)out8.data(), out8.size());
 
-    out16.clear();
-    comp.write_tree_leaves(out);
-    output.write((char*)out.data(), out.size());
-    out.clear();
+    uint8_t end_bit = 0;
+    out8.clear();
+    input.seekg(0, ios::beg);
 
+    was_read = 0;
     while(was_read < length)
     {
         in.resize(min(SIZE_BLOCK, length-was_read));
-        input.read((char *) in.data(), min(SIZE_BLOCK, length - was_read));
-        comp.compress(in, out, end_bit); //в out будет ещё лишний байтик, который может недописан, а может и дописан
-        output.write((char*)out.data(), out.size() - 1);
-
+        input.read((char *) in.data(), in.size());
+        comp.compress_block(in, out8, end_bit); //в out будет ещё лишний байтик, который может недописан, а может и дописан
+        output.write((char*)out8.data(), out8.size() - 1);
         was_read += SIZE_BLOCK;
     }
     if(end_bit % 8)
     {
-        output << out[out.size()-1];
+        output << out8[out8.size()-1];
     }
-    input.close();
-    output.close();
 }
 
 void decompress(string inputFileName, string outputFileName)
 {
-    Decompression decomp = Decompression();
-    ifstream input(inputFileName, ios::binary);
 
+    ifstream input(inputFileName, ios::binary);
     ofstream output(outputFileName, ios::binary);
 
     uint64_t input_file_length;
@@ -100,39 +97,30 @@ void decompress(string inputFileName, string outputFileName)
     uint16_t unique;
     input.read((char*)&length, sizeof(length));
     input.read((char*)&unique, sizeof(unique));
-    decomp.set_length(length);
-    decomp.set_unique(unique);
 
-    vector <uint16_t> in16(4096);
-    input.read((char*) in16.data(), 3*(unique-1)*sizeof(uint16_t));
+    vector <uint16_t> in16(Decompressor::count_tree_input_size_by_unique(unique));
+    input.read((char*) in16.data(), 2*in16.size());
 
+    vector <uint8_t> in8(Decompressor::count_leaves_input_size_by_unique(unique));
 
-    decomp.read_edges(in16);
+    input.read((char*) in8.data(), in8.size());
 
-    vector <uint8_t> in(4096);
-
-    input.read((char*) in.data(), unique*sizeof(uint8_t));
-    decomp.make_tree(in);
+    Decompressor decomp = Decompressor(length, unique, in16, in8);
 
     uint64_t was_read = input.tellg();
     vector <uint8_t> out;
 
     while(was_read < input_file_length)
     {
-        in.resize(min(SIZE_BLOCK, input_file_length-was_read));
-        input.read((char *) in.data(), min(SIZE_BLOCK, input_file_length- was_read));
+        in8.resize(min(SIZE_BLOCK, input_file_length-was_read));
+        input.read((char *) in8.data(), in8.size());
 
-        decomp.decompress(in, out);
+        decomp.decompress_block(in8, out);
         output.write((char*)out.data(), out.size());
         out.clear();
         was_read += SIZE_BLOCK;
     }
-
-    input.close();
-    output.close();
 }
-
-
 
 int main(int argc, char* argv[])
 {
@@ -184,8 +172,13 @@ int main(int argc, char* argv[])
         }
     }
 
+//    compress("huge.bin", "huge.hfm");
+//    cout << (double)clock()/1000<< endl;
+//    decompress("huge.hfm", "huge_out.bin");
+//    cout << (double)clock()/1000<< endl;
+
+
 //    compress("input.txt", "output.hfm");
-//    decompress("output.hfm", "output.txt");
 //    compress("input2.txt", "output2.hfm");
 //    decompress("output2.hfm", "output2.txt");
 //    compress("medium.exe", "medium.hfm");

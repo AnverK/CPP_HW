@@ -2,62 +2,55 @@
 #include <cassert>
 #include <vector>
 #include <utility>
+
 #include "gtest/gtest.h"
-#include "decompression.h"
-#include "compression.h"
 #include "exceptions.h"
+#include "compressor.h"
+#include "decompressor.h"
 
 vector <vector<uint8_t>> CHECK_DECOMPRESS(size_t const length, uint16_t const unique, vector <uint8_t> const  &leaves,
                                  vector <uint16_t> const &tree, vector < vector <uint8_t> > const & data)
 {
-    Decompression decomp = Decompression();
-    decomp.set_length(length);
-    decomp.set_unique(unique);
-    decomp.read_edges(tree);
-    decomp.make_tree(leaves);
+    Decompressor decomp = Decompressor(length, unique, tree, leaves);
     vector <vector <uint8_t> > res;
     for(auto v: data)
     {
         res.resize(res.size()+1);
-        decomp.decompress(v, res.back());
+        decomp.decompress_block(v, res.back());
     }
     return res;
 }
 
 void CHECK(vector < vector<uint8_t> > const &input)
 {
-    Compression comp = Compression();
-    size_t length = 0;
+    if(input.size() == 0)
+    {
+        return;
+    }
+
+    WeightCounter wc = WeightCounter(input[0]);
+    for(size_t i = 1; i < input.size(); i++)
+    {
+        wc.add_block(input[i]);
+    }
+    CodeTable ct = CodeTable(wc);
+
+    uint64_t length;
     uint16_t unique;
-    for(auto v: input)
-    {
-        length += v.size();
-    }
-
-    for(auto v: input)
-    {
-        comp.count_frequencies(v);
-    }
-    comp.make_list();
-    unique = comp.get_unique();
-    comp.go_through_list();
-    comp.make_table();
-
-    vector <uint8_t> leaves;
-    uint8_t end_bit = 0;
     vector <uint16_t> out16;
-    comp.write_tree_structure(out16);
-    comp.write_tree_leaves(leaves);
+    vector <uint8_t> out8;
+    Compressor comp = Compressor(ct, length, unique, out16, out8);
+
     vector < vector <uint8_t> > data;
     vector <uint8_t> buf;
-
+    uint8_t end_bit = 0;
     for(auto v: input)
     {
         if(v.size() == 0)
         {
             continue;
         }
-        comp.compress(v, buf, end_bit);
+        comp.compress_block(v, buf, end_bit);
         uint8_t c = buf.back();
         buf.pop_back();
         data.push_back(buf);
@@ -68,7 +61,7 @@ void CHECK(vector < vector<uint8_t> > const &input)
         data.back().push_back(buf.back());
     }
 
-    vector < vector <uint8_t> > res = CHECK_DECOMPRESS(length, unique, leaves, out16, data);
+    vector < vector <uint8_t> > res = CHECK_DECOMPRESS(length, unique, out8, out16, data);
 
     size_t index_in = 0, index_out = 0, i = 0, j = 0, cur = 0;
     while(index_in < input.size() && index_out < res.size())
@@ -119,6 +112,15 @@ TEST(correctness, one_block)
 }
 
 TEST(correctness, empty)
+{
+    int max_size = 0;
+    int num_of_blocks = 1000;
+    vector <vector <uint8_t> > T;
+    generate_blocks(T, max_size, num_of_blocks);
+    CHECK(T);
+}
+
+TEST(correctness, one_byte)
 {
     int max_size = 1;
     int num_of_blocks = 1000;
@@ -272,3 +274,8 @@ TEST(correctness, cyclic_tree)
     catch(Decoder_error e){
     }
 }
+
+//TEST(correctness, disconnected_tree)
+//{
+
+//}

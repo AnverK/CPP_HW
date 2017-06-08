@@ -97,7 +97,7 @@ void Decompression::make_tree(const vector<uint8_t> &input_block)
 {
     uint8_t num = 0;
     read_pos = 0;
-    root = new binary_tree(nullptr, nullptr, 0);
+    root = new BinaryTree(nullptr, nullptr, 0);
     last_visited = root;
     cur_len = 0;
     if(input_block.size() == 0)
@@ -107,15 +107,15 @@ void Decompression::make_tree(const vector<uint8_t> &input_block)
     root->make_tree(input_block, num, edges, read_pos);
 }
 
-void Decompression::make_tree(const vector<uint8_t> &input_block, binary_tree *root, uint8_t &num)
+void Decompression::make_tree(const vector<uint8_t> &input_block, BinaryTree *root, uint8_t &num)
 {
     root->left = nullptr;
     root->right = nullptr;
 
     if(edges[root->get_num()].size() != 0)
     {
-        root->left = new binary_tree(nullptr, nullptr, edges[root->num][0]);
-        root->right = new binary_tree(nullptr, nullptr, edges[root->num][1]);
+        root->left = new BinaryTree(nullptr, nullptr, edges[root->num][0]);
+        root->right = new BinaryTree(nullptr, nullptr, edges[root->num][1]);
         num++;
         make_tree(input_block, root->left, num);
         make_tree(input_block, root->right, num);
@@ -134,7 +134,7 @@ void Decompression::print_tree()
     print_tree(root);
 }
 
-void Decompression::print_tree(binary_tree *root)
+void Decompression::print_tree(BinaryTree *root)
 {
     if(root != nullptr)
     {
@@ -172,7 +172,7 @@ void Decompression::decompress(const vector<uint8_t> &input_block, vector<uint8_
 
 }
 
-uint16_t Decompression::find_symbol(binary_tree *root, int &used, uint8_t &byte, const vector<uint8_t> &input_block)
+uint16_t Decompression::find_symbol(BinaryTree *root, int &used, uint8_t &byte, const vector<uint8_t> &input_block)
 {
     if(root->get_left() == nullptr)
     {

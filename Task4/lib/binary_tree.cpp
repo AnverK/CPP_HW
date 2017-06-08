@@ -1,26 +1,25 @@
 #include "binary_tree.h"
-#include <iostream>
 
-binary_tree::binary_tree()
+BinaryTree::BinaryTree()
 {
     left = nullptr;
     right = nullptr;
 }
 
-binary_tree::binary_tree(binary_tree *l, binary_tree *r, vector<uint8_t> &str, uint64_t w) {
+BinaryTree::BinaryTree(BinaryTree *l, BinaryTree *r, vector<uint8_t> &str, uint64_t w) {
     left = l;
     right = r;
     s = str;
     weight = w;
 }
 
-binary_tree::binary_tree(binary_tree *l, binary_tree *r, uint16_t n) {
+BinaryTree::BinaryTree(BinaryTree *l, BinaryTree *r, uint16_t n) {
     left = l;
     right = r;
     num = n;
 }
 
-void binary_tree::merge(binary_tree *root1, binary_tree *root2) {
+void BinaryTree::merge(BinaryTree *root1, BinaryTree *root2) {
     root1->bit = 0;
     root2->bit = 1;
     vector<uint8_t> buf = root1->s;
@@ -31,7 +30,7 @@ void binary_tree::merge(binary_tree *root1, binary_tree *root2) {
     s = buf;
 }
 
-void enumerate_tree(binary_tree *root, uint16_t &num) {
+void enumerate_tree(BinaryTree *root, uint16_t &num) {
     if (root != nullptr)
     {
         root->num = num;
@@ -41,7 +40,7 @@ void enumerate_tree(binary_tree *root, uint16_t &num) {
     }
 }
 
-void make_code(binary_tree *root, vector<char> &code, vector<vector<char>> &table) {
+void make_code(BinaryTree *root, vector<uint8_t> &code, vector<vector<uint8_t>> &table) {
     if (root->left != nullptr)
     {
         code.push_back(0);
@@ -58,15 +57,15 @@ void make_code(binary_tree *root, vector<char> &code, vector<vector<char>> &tabl
     }
 }
 
-void binary_tree::make_tree(const vector<uint8_t> &input_block, uint8_t &num, vector <vector <int> > const &edges, size_t &read_pos)
+void BinaryTree::make_tree(const vector<uint8_t> &input_block, uint8_t &num, vector <vector <int> > const &edges, size_t &read_pos)
 {
     left = nullptr;
     right = nullptr;
 
     if(edges[this->num].size() != 0)
     {
-        left = new binary_tree(nullptr, nullptr, edges[this->num][0]);
-        right = new binary_tree(nullptr, nullptr, edges[this->num][1]);
+        left = new BinaryTree(nullptr, nullptr, edges[this->num][0]);
+        right = new BinaryTree(nullptr, nullptr, edges[this->num][1]);
         num++;
         left->make_tree(input_block, num, edges, read_pos);
         right->make_tree(input_block, num, edges, read_pos);
@@ -80,36 +79,36 @@ void binary_tree::make_tree(const vector<uint8_t> &input_block, uint8_t &num, ve
     }
 }
 
-uint64_t binary_tree::get_weight() {
+uint64_t BinaryTree::get_weight() {
     return weight;
 }
 
-binary_tree* binary_tree::get_left()
+BinaryTree* BinaryTree::get_left()
 {
     return left;
 }
 
-binary_tree* binary_tree::get_right()
+BinaryTree* BinaryTree::get_right()
 {
     return right;
 }
 
-char binary_tree::get_bit()
+char BinaryTree::get_bit()
 {
     return bit;
 }
 
-uint64_t binary_tree::get_num()
+uint64_t BinaryTree::get_num()
 {
     return num;
 }
 
-uint8_t binary_tree::get_sym()
+uint8_t BinaryTree::get_sym()
 {
     return s[0];
 }
 
-void binary_tree::clear()
+void BinaryTree::clear()
 {
     if(left != nullptr)
     {

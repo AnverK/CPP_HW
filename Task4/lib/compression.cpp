@@ -46,7 +46,7 @@ void Compression::make_list()
         frequencies[c] = 0;
         vector<uint8_t> s;
         s.push_back(c);
-        binary_tree *root = new binary_tree(nullptr, nullptr, s, max);
+        BinaryTree *root = new BinaryTree(nullptr, nullptr, s, max);
         trees.push_back(root);
     }
     unique = trees.size();
@@ -56,12 +56,12 @@ void Compression::go_through_list()
 {
     while (trees.size() > 1)
     {
-        binary_tree *r1 = trees.back();
+        BinaryTree *r1 = trees.back();
         trees.pop_back();
-        binary_tree *root = new binary_tree();
+        BinaryTree *root = new BinaryTree();
         root->merge(trees.back(), r1);
         trees.pop_back();
-        list<binary_tree *>::iterator it = trees.end();
+        list<BinaryTree *>::iterator it = trees.end();
 		
 		if(trees.size() == 0)
 		{
@@ -97,7 +97,7 @@ void Compression::go_through_list()
 
 void Compression::make_table()
 {
-    vector<char> tmp;
+    vector<uint8_t> tmp;
     if(trees.front())
     {
         make_code(trees.front(), tmp, table);
@@ -125,7 +125,7 @@ void Compression::print_table()
     }
 }
 
-void Compression::print_tree(binary_tree *root)
+void Compression::print_tree(BinaryTree *root)
 {
     if(root != nullptr)
     {
@@ -160,7 +160,7 @@ void Compression::write_tree_leaves(vector<uint8_t> &output_block)
     }
 }
 
-void Compression::write_tree_structure(binary_tree *root, vector<uint16_t> &output_block)
+void Compression::write_tree_structure(BinaryTree *root, vector<uint16_t> &output_block)
 {
     if(root->get_left() != nullptr)   //у дерева Хаффмана всегда 0 или 2 ребёнка
     {
@@ -175,7 +175,7 @@ void Compression::write_tree_structure(binary_tree *root, vector<uint16_t> &outp
     }
 }
 
-void Compression::write_tree_leaves(binary_tree *root, vector <uint8_t> &output_block)
+void Compression::write_tree_leaves(BinaryTree *root, vector <uint8_t> &output_block)
 {
     if(root->get_left() != nullptr)
     {
