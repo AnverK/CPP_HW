@@ -124,53 +124,53 @@ void decompress(string inputFileName, string outputFileName)
 
 int main(int argc, char* argv[])
 {
-    if(argc != 4)
-    {
-        if(argc == 2 && strcmp(argv[1], "--help") == 0)
-        {
-            show_help();
-            return 0;
-        }
-        else
-        {
-            std::cerr << "ERROR:\tIncorrect number of arguments. Run this application with only one argument: '--help'\n";
-            return 1;
-        }
-    }
-    int mode;
-    if(strcmp(argv[1], "-c") == 0)
-    {
-        mode = 0;
-    }
-    else if(strcmp(argv[1], "-d") == 0)
-    {
-        mode = 1;
-    }
-    else
-    {
-        std::cerr << "Incorrect first argument. Run this application with only one argument: '--help'\n";
-        return 1;
-    }
+//    if(argc != 4)
+//    {
+//        if(argc == 2 && strcmp(argv[1], "--help") == 0)
+//        {
+//            show_help();
+//            return 0;
+//        }
+//        else
+//        {
+//            std::cerr << "ERROR:\tIncorrect number of arguments. Run this application with only one argument: '--help'\n";
+//            return 1;
+//        }
+//    }
+//    int mode;
+//    if(strcmp(argv[1], "-c") == 0)
+//    {
+//        mode = 0;
+//    }
+//    else if(strcmp(argv[1], "-d") == 0)
+//    {
+//        mode = 1;
+//    }
+//    else
+//    {
+//        std::cerr << "Incorrect first argument. Run this application with only one argument: '--help'\n";
+//        return 1;
+//    }
 
-    char *name_input = argv[2], *name_output = argv[3];
-    if(mode == 0)
-    {
-        try {
-            compress(name_input, name_output);
-        }
-        catch(...){
-            std::cerr << "Failed to compress file" << endl;
-        }
-    }
-    else if(mode == 1)
-    {
-        try {
-            decompress(name_input, name_output);
-        }
-        catch(...){
-            std::cerr << "Failed to decompress file" << endl;
-        }
-    }
+//    char *name_input = argv[2], *name_output = argv[3];
+//    if(mode == 0)
+//    {
+//        try {
+//            compress(name_input, name_output);
+//        }
+//        catch(...){
+//            std::cerr << "Failed to compress file" << endl;
+//        }
+//    }
+//    else if(mode == 1)
+//    {
+//        try {
+//            decompress(name_input, name_output);
+//        }
+//        catch(...){
+//            std::cerr << "Failed to decompress file" << endl;
+//        }
+//    }
 
 //    compress("huge.bin", "huge.hfm");
 //    cout << (double)clock()/1000<< endl;
@@ -180,13 +180,18 @@ int main(int argc, char* argv[])
 
 //    compress("input.txt", "output.hfm");
 //    compress("input2.txt", "output2.hfm");
-//    decompress("output2.hfm", "output2.txt");
+//    decompress("output.hfm", "output.txt");
 //    compress("medium.exe", "medium.hfm");
+    compress("huge.exe", "huge.hfm");
+    cout << (double)clock()/1000<< endl;
+    decompress("huge.hfm", "huge_out.exe");
+//    decompress("medium.hfm", "medium_out.exe");
+    cout << (double)clock()/1000<< endl;
+
 
 
 //    compress("empty.txt", "output_empty.hfm");
 //    decompress("output_empty.hfm", "empty_out.txt");
-//    cout << (double)clock()/1000<< endl;
 //    decompress("medium.hfm", "out_medium.exe");
 //    cout << (double)clock()/1000 << endl;
     return 0;

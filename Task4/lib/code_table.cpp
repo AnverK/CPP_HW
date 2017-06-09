@@ -69,10 +69,11 @@ void CodeTable::go_through_list()
         }
     }
 }
+#include <iostream>
 void CodeTable::make_table()
 {
     vector<uint8_t> tmp;
-    if(trees.front())
+    if(!trees.empty() && trees.front())
     {
         make_code(trees.front(), tmp, table);
         uint16_t num = 0;
@@ -109,11 +110,19 @@ uint16_t CodeTable::get_unique() const
 
 BinaryTree* CodeTable::get_root()
 {
+    if(trees.empty())
+    {
+        return nullptr;
+    }
     return trees.front();
 }
 
 BinaryTree* CodeTable::get_root() const
 {
+    if(trees.empty())
+    {
+        return nullptr;
+    }
     return trees.front();
 }
 

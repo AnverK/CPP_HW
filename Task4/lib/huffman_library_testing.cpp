@@ -104,7 +104,7 @@ void generate_blocks(vector <vector <uint8_t> > &T, int max_size, int num_of_blo
 
 TEST(correctness, one_block)
 {
-    int max_size = 100;
+    int max_size = 1000;
     int num_of_blocks = 1;
     vector <vector <uint8_t> > T;
     generate_blocks(T, max_size, num_of_blocks);
@@ -275,7 +275,22 @@ TEST(correctness, cyclic_tree)
     }
 }
 
-//TEST(correctness, disconnected_tree)
-//{
+TEST(correctness, disconnected_tree)
+{
+    size_t len = 0;
+    vector <vector <uint8_t> > data(0);      //неважно, чему эти параметры равны, ждём эксепшна. А если нет, то и пофиг
 
-//}
+    uint16_t unique = 3;
+
+    vector <uint8_t> leaves{0, 1, 2};       // размер совпадает с unique
+
+    vector <uint16_t> tree{0, 1, 2, 3, 4, 5};   //размер совпадает с допустимым: если 3 уникальных, то есть 5 вершин.
+    // Но тут они образуют несвязные два дерева
+
+    try {
+        CHECK_DECOMPRESS(len, unique, leaves, tree, data);
+        ASSERT_EQ(1, 2);
+    }
+    catch(Decoder_error e){
+    }
+}

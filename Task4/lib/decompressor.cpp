@@ -1,4 +1,7 @@
 #include "decompressor.h"
+#include <iostream>
+#include <stack>
+
 Decompressor::Decompressor(uint64_t l, uint16_t u, vector <uint16_t> const& tree_input, vector <uint8_t> const& leaves_input)
 {
     if(tree_input.size() != count_tree_input_size_by_unique(u) ||
@@ -34,11 +37,11 @@ Decompressor::Decompressor(uint64_t l, uint16_t u, vector <uint16_t> const& tree
         check_tree();
     }
 
-    make_tree(leaves_input);
+    sym_by_num.resize(512);
+    fill_syms(leaves_input);
+    last_visited = 0;
     read_pos = 0;
     cur_len = 0;
-    last_visited = root;
-
 }
 
 
@@ -68,18 +71,35 @@ void Decompressor::check_tree()
     }
 }
 
-void Decompressor::make_tree(const vector<uint8_t> &input_block)
+void Decompressor::fill_syms(const vector<uint8_t> &input_block)
 {
-    uint8_t num = 0;
-    read_pos = 0;
-    root = new BinaryTree(nullptr, nullptr, 0);
-    if(input_block.size() == 0)
+    if(unique <= 0)
     {
         return;
     }
-    root->make_tree(input_block, num, edges, read_pos);
+    stack <uint16_t> st;
+    st.push(0);
+    size_t i = 0;
+    while(!st.empty())
+    {
+        uint16_t cur = st.top();
+        st.pop();
+        if(edges[cur].size() == 2)
+        {
+            st.push(edges[cur][1]);
+            st.push(edges[cur][0]);
+        }
+        else
+        {
+            sym_by_num[cur] = input_block[i];
+            i++;
+        }
+    }
+    if(i != input_block.size()) //значит не все листья записаны, значит дерево не связано, это плохо
+    {
+        throw Decoder_error();
+    }
 }
-
 
 uint16_t Decompressor::count_leaves_input_size_by_unique(uint16_t u)
 {
@@ -101,51 +121,37 @@ void Decompressor::decompress_block(const vector<uint8_t> &input_block, vector<u
     {
         return;
     }
-    uint8_t byte = input_block[0];
-    read_pos = 1;
-    int used = 0;
-    uint16_t cur_sym;
-    while (cur_len < length)
-    {
-        cur_sym = find_symbol(last_visited, used, byte, input_block);
-        if(cur_sym == 256)
-        {
-            return;
-        }
-        output_block.push_back((uint8_t)cur_sym);
-        cur_len++;
-        last_visited = root;
-    }
-
+    write_symbols(last_visited, input_block, output_block);
+    cur_len += output_block.size();
 }
 
-uint16_t Decompressor::find_symbol(BinaryTree *root, int &used, uint8_t &byte, const vector<uint8_t> &input_block)
+void Decompressor::write_symbols(uint16_t cur, const vector<uint8_t> &input_block, vector<uint8_t> &output_block)
 {
-    if(root->get_left() == nullptr)
+    int used = 0;
+    size_t max_size = (input_block.size() << 3);
+//    output_block.reserve(max_size);
+    uint8_t byte = input_block[0];
+    read_pos = 1;
+    while(cur_len + output_block.size() < length && output_block.size() < max_size)
     {
-        return root->get_sym();
-    }
-    if(used == 8)
-    {
-        used = 0;
-        if(read_pos == input_block.size())
+        while(edges[cur].size() != 0)
         {
-            last_visited = root;
-            read_pos = 0;
-            return 256;
+            if(used == 8)
+            {
+                used = 0;
+                if(read_pos == input_block.size())
+                {
+                    last_visited = cur;
+                    read_pos = 0;
+                    return;
+                }
+                byte = input_block[read_pos];
+                read_pos++;
+            }
+            cur = edges[cur][(byte >> (7 - used)) & 0x01];
+            used++;
         }
-        byte = input_block[read_pos];
-        read_pos++;
-    }
-    if( (byte >> (7 - used)) & 0x01)
-    {
-        used++;
-        return find_symbol(root->get_right(), used, byte, input_block);
-
-    }
-    else
-    {
-        used++;
-        return find_symbol(root->get_left(), used, byte, input_block);
+        output_block.push_back(sym_by_num[cur]);
+        cur = 0;
     }
 }
