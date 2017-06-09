@@ -141,8 +141,8 @@ TEST(correctness, random_tests)
 
 TEST(correctness, small_blocks)
 {
-    int max_size = 1;
-    int num_of_blocks = 1000;
+    int max_size = 6;
+    int num_of_blocks = 100000;
     vector <vector <uint8_t> > T;
     generate_blocks(T, max_size, num_of_blocks);
     CHECK(T);
@@ -227,7 +227,7 @@ TEST(correctness, too_many_childrens_in_tree)
         CHECK_DECOMPRESS(len, unique, leaves, tree, data);
         ASSERT_EQ(1, 2);
     }
-    catch(...){
+    catch(Decoder_error e){
 //        cout << e.what() << endl;
     }
 }

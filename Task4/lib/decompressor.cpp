@@ -5,14 +5,16 @@
 Decompressor::Decompressor(uint64_t l, uint16_t u, vector <uint16_t> const& tree_input, vector <uint8_t> const& leaves_input)
 {
     if(tree_input.size() != count_tree_input_size_by_unique(u) ||
-            leaves_input.size() != count_leaves_input_size_by_unique(u))
+            leaves_input.size() != count_leaves_input_size_by_unique(u)||
+            tree_input.size() == 3*(257-1) || leaves_input.size() == 257 || u > 256)
     {
         throw Decoder_error();
     }
 
     length = l;
     unique = u;
-    edges.resize(512);
+    for (int i = 0; i < SZ; ++i)
+        edges[i][0] = edges[i][1] = -1;
 
     for(read_pos = 0; read_pos < tree_input.size(); read_pos += 3)
     {
@@ -25,12 +27,12 @@ Decompressor::Decompressor(uint64_t l, uint16_t u, vector <uint16_t> const& tree
         {
             throw Decoder_error();
         }
-        edges[v].push_back(l);
-        edges[v].push_back(r);
-        if(edges[v].size() != 2)
+        if (edges[v][0] != -1)
         {
             throw Decoder_error();
         }
+        edges[v][0] = l;
+        edges[v][1] = r;
     }
     if(unique > 0)
     {
@@ -63,7 +65,7 @@ void Decompressor::check_tree()
             throw Decoder_error();
         }
         visited[cur] = 1;
-        if(edges[cur].size() == 2)
+        if(edges[cur][0] != -1)
         {
             q.push(edges[cur][0]);
             q.push(edges[cur][1]);
@@ -84,7 +86,7 @@ void Decompressor::fill_syms(const vector<uint8_t> &input_block)
     {
         uint16_t cur = st.top();
         st.pop();
-        if(edges[cur].size() == 2)
+        if(edges[cur][0] != -1)
         {
             st.push(edges[cur][1]);
             st.push(edges[cur][0]);
@@ -103,11 +105,20 @@ void Decompressor::fill_syms(const vector<uint8_t> &input_block)
 
 uint16_t Decompressor::count_leaves_input_size_by_unique(uint16_t u)
 {
+    if(u > 256)
+    {
+        return 257;       //пользователь не выделит слишком много памяти, юзая эту функцию, чтобы определить размер.
+                          //Но проверка в начале конструктора класса поймёт, что что-то не так
+    }
     return u;
 }
 
 uint64_t Decompressor::count_tree_input_size_by_unique(uint16_t u)
 {
+    if(u > 256)
+    {
+        return 3*(257-1);  //см. uint16_t count_leaves_input_size_by_unique(uint16_t u)
+    }
     if(u == 0)
     {
         return 0;
@@ -129,12 +140,12 @@ void Decompressor::write_symbols(uint16_t cur, const vector<uint8_t> &input_bloc
 {
     int used = 0;
     size_t max_size = (input_block.size() << 3);
-//    output_block.reserve(max_size);
+    output_block.reserve(max_size);
     uint8_t byte = input_block[0];
     read_pos = 1;
     while(cur_len + output_block.size() < length && output_block.size() < max_size)
     {
-        while(edges[cur].size() != 0)
+        while(edges[cur][0] != -1)
         {
             if(used == 8)
             {

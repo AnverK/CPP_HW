@@ -24,8 +24,6 @@ public:
 
     void merge(BinaryTree *root1, BinaryTree *root2);
 
-    void make_tree(vector <uint8_t> const &input_block, uint8_t &num, vector <vector <int> > const &edges, size_t &read_pos);
-
     uint64_t get_weight();
 
     BinaryTree* get_left();

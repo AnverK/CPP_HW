@@ -57,28 +57,6 @@ void make_code(BinaryTree *root, vector<uint8_t> &code, vector<vector<uint8_t>> 
     }
 }
 
-void BinaryTree::make_tree(const vector<uint8_t> &input_block, uint8_t &num, vector <vector <int> > const &edges, size_t &read_pos)
-{
-    left = nullptr;
-    right = nullptr;
-
-    if(edges[this->num].size() != 0)
-    {
-        left = new BinaryTree(nullptr, nullptr, edges[this->num][0]);
-        right = new BinaryTree(nullptr, nullptr, edges[this->num][1]);
-        num++;
-        left->make_tree(input_block, num, edges, read_pos);
-        right->make_tree(input_block, num, edges, read_pos);
-    }
-    else
-    {
-        uint8_t c;
-        c = input_block[read_pos];
-        read_pos++;
-        s.push_back(c);
-    }
-}
-
 uint64_t BinaryTree::get_weight() {
     return weight;
 }
