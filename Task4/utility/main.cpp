@@ -25,7 +25,10 @@ const size_t SIZE_BLOCK = 4096;
 void compress(string inputFileName, string outputFileName)
 {
     ifstream input(inputFileName, ios::binary);
-
+    if(!input.is_open())
+    {
+        throw Decoder_error();
+    }
     uint64_t length;
     input.seekg(0, ios::end);
     length = input.tellg();
@@ -85,6 +88,10 @@ void decompress(string inputFileName, string outputFileName)
 {
 
     ifstream input(inputFileName, ios::binary);
+    if(!input.is_open())
+    {
+        throw Decoder_error();
+    }
     ofstream output(outputFileName, ios::binary);
 
     uint64_t input_file_length;
