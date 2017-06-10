@@ -27,18 +27,18 @@ Decompressor::Decompressor(uint64_t l, uint16_t u, vector <uint16_t> const& tree
         {
             throw Decoder_error();
         }
-        if (edges[v][0] != -1)
+        if (edges[v][0] != -1 || edges[v][1] != -1)
         {
             throw Decoder_error();
         }
         edges[v][0] = l;
         edges[v][1] = r;
     }
-    if(unique > 0)
-    {
-        check_tree();
-    }
 
+    if(unique > 1)
+    {
+        check_tree();       // на циклы проверка
+    }
     sym_by_num.resize(512);
     fill_syms(leaves_input);
     last_visited = 0;
@@ -82,7 +82,8 @@ void Decompressor::fill_syms(const vector<uint8_t> &input_block)
     stack <uint16_t> st;
     st.push(0);
     size_t i = 0;
-    while(!st.empty())
+
+    while(st.size() != 0)
     {
         uint16_t cur = st.top();
         st.pop();

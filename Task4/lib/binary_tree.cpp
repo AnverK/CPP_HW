@@ -76,7 +76,7 @@ char BinaryTree::get_bit()
     return bit;
 }
 
-uint64_t BinaryTree::get_num()
+uint16_t BinaryTree::get_num()
 {
     return num;
 }

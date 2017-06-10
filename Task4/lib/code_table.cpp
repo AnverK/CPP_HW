@@ -25,7 +25,7 @@ CodeTable::CodeTable(const WeightCounter &w)
         BinaryTree *root = new BinaryTree(nullptr, nullptr, s, max);
         trees.push_back(root);
     }
-    unique = trees.size();      //число листьев. <= 256
+    unique = (uint16_t) trees.size();      //число листьев. <= 256 по-любому
     length = w.get_length();
     go_through_list();
     table.resize(256);

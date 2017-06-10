@@ -228,7 +228,6 @@ TEST(correctness, too_many_childrens_in_tree)
         ASSERT_EQ(1, 2);
     }
     catch(Decoder_error e){
-//        cout << e.what() << endl;
     }
 }
 

@@ -45,15 +45,48 @@ public:
 private:
     const static int SMALL_SIZE = 4;
 
-    void swap(vector_uint32 &other);
-
     size_t size_;
     size_t capacity_;
-    uint32_t* data_;
 
+    struct big_object
+    {
+        big_object(size_t new_capacity, uint32_t* ptr);
+        size_t capacity;
+        std::shared_ptr <uint32_t> ptr;
+        void swap(big_object &other);
+    };
+
+    union data
+    {
+        uint32_t small_obj[SMALL_SIZE];
+        big_object big_obj;
+        data();
+        ~data();
+    } data_;
+
+    struct my_deleter
+    {
+        void operator()(uint32_t* ptr)
+        {
+            operator delete(ptr);
+        }
+    };
+
+    friend uint32_t* copy_data(size_t capacity, size_t size, const uint32_t *src);
+
+    uint32_t* my_data;  //если объект маленький, то на small_obj, если большой, то ptr.get()
+
+    void swap(vector_uint32 &other);
+    void swap_big_and_small(data &big, data &small);
     void set_capacity(size_t new_capacity);
     size_t increase_capacity(size_t new_size) const;
+    uint64_t get_capacity();
+    uint64_t get_capacity() const;
+    void switch_to_big(size_t new_capacity);
+    bool is_big();
+    bool is_big() const;
 
+    void change_ptr();
 };
 
 #endif // VECTOR_UINT32_H

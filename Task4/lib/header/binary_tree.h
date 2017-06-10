@@ -29,7 +29,7 @@ public:
     BinaryTree* get_left();
     BinaryTree* get_right();
     char get_bit();
-    uint64_t get_num();
+    uint16_t get_num();
     uint8_t get_sym();
 
     void write_tree_structure(vector<uint16_t> &output_block);

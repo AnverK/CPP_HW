@@ -172,6 +172,7 @@ std::string to_string(big_integer const &a)
         uint32_t mod = (char)long_mod_short(tmp, 10, BASE);
         str.push_back((char)(mod+'0'));
     }
+
     while(!str.empty() && str[str.size()-1] == '0')
     {
         str.pop_back();
@@ -576,7 +577,18 @@ void big_integer::divide(vector_uint32 &res, vector_uint32 const &a, vector_uint
 
     uint32_t d = (uint32_t)(BASE / (b[b.size() - 1] + 1));
 
-    vector_uint32 u(a), v(b);
+
+//    vector_uint32 u(a), v(b);
+    vector_uint32 u(a.size()), v(b.size());
+    for(size_t i = 0; i < a.size(); i++)
+    {
+        u[i] = a[i];
+    }
+    for(size_t i = 0; i < b.size(); i++)
+    {
+        v[i] = b[i];
+    }
+
     long_mul_short(u, a, d);
     long_mul_short(v, b, d);
     clear_zero(u);

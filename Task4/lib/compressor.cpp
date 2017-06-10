@@ -47,7 +47,7 @@ void Compressor::compress_block(vector <uint8_t> const &input_block, vector <uin
     {
         return;
     }
-    int used = end;
+    size_t used = end;
     uint8_t cur = (output_block.size() > 0 ? output_block[output_block.size()-1] : 0), c = 0;         // c -- символ из inout_block, cur -- текущий байт на запись
     output_block.clear();
     for (size_t i = 0; i < input_block.size(); i++)
@@ -55,7 +55,7 @@ void Compressor::compress_block(vector <uint8_t> const &input_block, vector <uin
         c = input_block[i];
         size_t size = table[c].size();
         int k = 0;
-        if ((int) size >= 8 - used)    //добиваем остаточек, если возможно
+        if (size >= 8 - used)    //добиваем остаточек, если возможно
         {
             uint8_t out_byte = cur;
             for (int i = used; i < 8; i++) {
