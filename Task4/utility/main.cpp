@@ -86,24 +86,29 @@ void compress(string inputFileName, string outputFileName)
 
 void decompress(string inputFileName, string outputFileName)
 {
-
     ifstream input(inputFileName, ios::binary);
     if(!input.is_open())
     {
         throw Decoder_error();
     }
-    ofstream output(outputFileName, ios::binary);
+
 
     uint64_t input_file_length;
     input.seekg(0, ios::end);
     input_file_length = input.tellg();
+    if(input_file_length < (8 + 2)) //должны быть хотя бы длина выходного файла и число различных символов
+    {
+        throw Decoder_error();
+    }
+
+    ofstream output(outputFileName, ios::binary);
 
     input.seekg(0, ios::beg);
-
     uint64_t length;
     uint16_t unique;
     input.read((char*)&length, sizeof(length));
     input.read((char*)&unique, sizeof(unique));
+
 
     vector <uint16_t> in16(Decompressor::count_tree_input_size_by_unique(unique));
     input.read((char*) in16.data(), 2*in16.size());
