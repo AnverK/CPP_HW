@@ -28,18 +28,17 @@ void CHECK(vector < vector<uint8_t> > const &input)
         return;
     }
 
-    WeightCounter wc = WeightCounter(input[0]);
+    WeightCounter wc(input[0]);
     for(size_t i = 1; i < input.size(); i++)
     {
         wc.add_block(input[i]);
     }
-    CodeTable ct = CodeTable(wc);
 
     uint64_t length;
     uint16_t unique;
     vector <uint16_t> out16;
     vector <uint8_t> out8;
-    Compressor comp = Compressor(ct, length, unique, out16, out8);
+    Compressor comp(wc, length, unique, out16, out8);
 
     vector < vector <uint8_t> > data;
     vector <uint8_t> buf;

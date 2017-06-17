@@ -1,6 +1,6 @@
 #include "vector_uint32.h"
 #include <iostream>
-
+#include <cassert>
 
 
 uint32_t* copy_data(size_t capacity, size_t size, const uint32_t *src)
@@ -102,6 +102,7 @@ size_t vector_uint32::size() const
 uint32_t& vector_uint32::operator[](size_t ind)
 {
 //    change_ptr();
+    assert(!is_big() || data_.big_obj.ptr.unique());
     return my_data[ind];
 }
 
@@ -165,6 +166,7 @@ vector_uint32& vector_uint32::operator=(vector_uint32 const &other) {
 void vector_uint32::pop_back()
 {
 //    change_ptr();
+    assert(!is_big() || data_.big_obj.ptr.unique());
     size_--;
 }
 
@@ -290,11 +292,11 @@ bool vector_uint32::is_big() const
     return my_data != data_.small_obj;
 }
 
-//void vector_uint32::change_ptr()
-//{
-//    if (is_big() && !data_.big_obj.ptr.unique())
-//    {
-//        data_.big_obj.ptr.reset(copy_data(size(), size(), my_data), my_deleter());
-//        my_data = data_.big_obj.ptr.get();
-//    }
-//}
+void vector_uint32::change_ptr()
+{
+    if (is_big() && !data_.big_obj.ptr.unique())
+    {
+        data_.big_obj.ptr.reset(copy_data(size(), size(), my_data), my_deleter());
+        my_data = data_.big_obj.ptr.get();
+    }
+}

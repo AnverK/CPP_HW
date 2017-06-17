@@ -1,8 +1,9 @@
 #include "compressor.h"
 
-Compressor::Compressor(CodeTable const &ct, uint64_t &length, uint16_t &unique,
+Compressor::Compressor(WeightCounter const &wc, uint64_t &length, uint16_t &unique,
                        vector <uint16_t> &tree_output, vector <uint8_t> &leaves_output)
 {
+    CodeTable ct(wc);
     table = ct.get_table();
     root = ct.get_root();
     length = ct.get_length();

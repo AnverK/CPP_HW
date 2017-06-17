@@ -42,6 +42,8 @@ public:
 
     void clear();
 
+    void change_ptr();
+
 private:
     const static int SMALL_SIZE = 4;
 
@@ -85,8 +87,6 @@ private:
     void switch_to_big(size_t new_capacity);
     bool is_big();
     bool is_big() const;
-
-    void change_ptr();
 };
 
 #endif // VECTOR_UINT32_H

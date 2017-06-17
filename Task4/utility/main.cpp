@@ -39,7 +39,7 @@ void compress(string inputFileName, string outputFileName)
     vector<uint8_t> in(min(SIZE_BLOCK, length-was_read));
 
     input.read((char *) in.data(), in.size());
-    WeightCounter wc = WeightCounter(in);
+    WeightCounter wc(in);
     was_read += in.size();
 
     while(was_read < length)
@@ -50,13 +50,11 @@ void compress(string inputFileName, string outputFileName)
         was_read += SIZE_BLOCK;
     }
 
-    CodeTable ct = CodeTable(wc);
-
     uint16_t unique;
 
     vector <uint16_t> out16;
     vector <uint8_t> out8;
-    Compressor comp = Compressor(ct, length, unique, out16, out8);
+    Compressor comp(wc, length, unique, out16, out8);
 
     ofstream output(outputFileName, ios::binary);
 
@@ -117,7 +115,7 @@ void decompress(string inputFileName, string outputFileName)
 
     input.read((char*) in8.data(), in8.size());
 
-    Decompressor decomp = Decompressor(length, unique, in16, in8);
+    Decompressor decomp(length, unique, in16, in8);
 
     uint64_t was_read = input.tellg();
     vector <uint8_t> out;

@@ -292,7 +292,7 @@ big_integer& big_integer::operator+=(big_integer const& rhs)
         add(number, number, rhs.number);
         return *this;
     }
-
+    number.change_ptr();
     int comp = compare(*this, rhs, true);
     if(comp == 0)
     {
@@ -431,6 +431,7 @@ void big_integer::add(vector_uint32 &res, const vector_uint32 &a, const vector_u
     size_t length = std::max(a.size(), b.size()) + 1;
     size_t a_size = a.size(), b_size = b.size();
     res.resize(length);
+    res.change_ptr();
     uint64_t carry = 0;
 
     for (size_t i = 0; i < length; i++)
@@ -446,7 +447,7 @@ void big_integer::subtract(vector_uint32 &res, const vector_uint32 &a, const vec
 {
     size_t length = std::max(a.size(), b.size());
     size_t b_size = b.size();
-    res.resize(length); 
+    res.resize(length);
     uint64_t carry = 0;
     for (size_t i=0; i<b_size || carry; ++i) {
         uint64_t tmp = (uint64_t) carry + (i < b_size ? b[i] : 0);
@@ -468,8 +469,7 @@ void big_integer::multiply(vector_uint32 &res, const vector_uint32 &a, const vec
 {
     size_t length = a.size() + b.size();
     res.clear();
-    res.resize(length);
-
+    res.resize(length);    
     for (size_t i = 0; i < a.size(); i++)
     {
         uint64_t carry = 0;

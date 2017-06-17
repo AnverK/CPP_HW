@@ -12,7 +12,7 @@ private:
     void write_tree_leaves(BinaryTree* root, vector <uint8_t> &output_block);
 
 public:
-    Compressor(const CodeTable &ct, uint64_t &length, uint16_t &unique,
+    Compressor(const WeightCounter &wc, uint64_t &length, uint16_t &unique,
                vector <uint16_t> &tree_output, vector <uint8_t> &leaves_output);
     ~Compressor();
     //    подаются два любых вектора и два любых числа нужного размера.
