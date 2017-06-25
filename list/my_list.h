@@ -72,26 +72,6 @@ public:
 
         U& operator*() const;
 
-        bool operator==(my_iterator const &t)
-        {
-            return (ptr == t.ptr);
-        }
-
-        bool operator!=(my_iterator const &t) const
-        {
-            return (ptr != t.ptr);
-        }
-
-        bool operator!=(my_iterator &t)
-        {
-            return (ptr != t.ptr);
-        }
-
-        bool operator==(my_iterator &t)
-        {
-            return (ptr == t.ptr);
-        }
-
         base_node* ptr;
     };
     typedef my_iterator<T> iterator;
@@ -144,6 +124,18 @@ private:
      base_node *tail;
      void remove_one(base_node *v);
 };
+
+template<typename T>
+bool operator==(my_list<T>::const_iterator &t) const
+{
+    return (ptr == t.ptr);
+}
+
+template<typename T>
+bool operator!=(my_list<T>::const_iterator &t) const
+{
+    return (ptr != t.ptr);
+}
 
 template<typename T>
 template<typename U>
