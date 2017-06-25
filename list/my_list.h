@@ -16,17 +16,15 @@ private:
     }
     struct base_node
     {
-        base_node()
-        {
-            prev = nullptr;
-            next = nullptr;
-        }
+        base_node():
+            prev(nullptr),
+            next(nullptr)
+        {}
 
-        base_node(base_node *prev, base_node *next)
-        {
-            this->prev = prev;
-            this->next = next;
-        }
+        base_node(base_node *p, base_node *n):
+            prev(p),
+            next(n)
+        {}
 
         base_node* prev;
         base_node* next;
@@ -36,19 +34,13 @@ private:
     {
         node() = delete;
         node(const T& a):
-            prev(nullptr),
-            next(nullptr),
+            base_node(nullptr, nullptr),
             data(a)
         {}
         node(base_node *p, base_node *n, const T& a):
-            prev(p),
-            next(n),
+            base_node(p, n),
             data(a)
         {}
-
-
-        base_node *prev;
-        base_node *next;
         T data;
     };
 
@@ -119,6 +111,11 @@ public:
     void clear();
     void push_back(T const&);
     void pop_back();
+
+    void pop_front();
+    void push_front(T const&);
+    T& front();
+    T const& front() const;
 
     T& back();
     T const& back() const;
@@ -235,6 +232,7 @@ template<typename T>
 my_list<T>::~my_list()
 {
     clear();
+    delete tail;
 }
 
 template<typename T>
@@ -268,7 +266,6 @@ typename my_list<T>::template my_iterator<T> my_list<T>::insert(const_iterator p
 template<typename T>
 typename my_list<T>::template my_iterator<T> my_list<T>::erase(const_iterator first, const_iterator last)
 {
-
     while(first != last)
     {
         first = erase(first);
@@ -281,15 +278,26 @@ typename my_list<T>::template my_iterator<T> my_list<T>::erase(const_iterator po
 {
     base_node *prev = pos.ptr->prev;
     remove_one(pos.ptr);
-    return iterator(prev);
+    return iterator(prev->next);
 }
 
 template<typename T>
 void my_list<T>::remove_one(base_node *v)
 {
-    v->prev->next = v->next;
-    v->next->prev = v->prev;
-    delete v;
+//    cout << static_cast<node*>(v)->data << endl;
+    if(v->next == tail && v->prev == tail)
+    {
+//        cout << "HERE" << endl;
+        tail->next = tail;
+        tail->prev = tail;
+        delete (static_cast<node*>(v));
+    }
+    else
+    {
+        v->prev->next = v->next;
+        v->next->prev = v->prev;
+        delete (static_cast<node*>(v));
+    }
 }
 
 template <typename T>
@@ -314,6 +322,30 @@ template <typename T>
 void my_list<T>::push_back(T const& el)
 {
     insert(end(), el);
+}
+
+template <typename T>
+T& my_list<T>::front()
+{
+    return static_cast<node*>(tail->next)->data;
+}
+
+template <typename T>
+T const& my_list<T>::front() const
+{
+    return static_cast<node*>(tail->next)->data;
+}
+
+template <typename T>
+void my_list<T>::pop_front()
+{
+    erase(begin());
+}
+
+template <typename T>
+void my_list<T>::push_front(T const& el)
+{
+    insert(begin(), el);
 }
 
 template <typename T>
