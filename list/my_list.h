@@ -70,6 +70,16 @@ public:
         my_iterator operator++(int);
         my_iterator operator--(int);
 
+        friend bool operator==(my_iterator a, my_iterator b)
+        {
+            return (a.ptr == b.ptr);
+        }
+
+        friend bool operator!=(my_iterator a, my_iterator b)
+        {
+            return (a.ptr != b.ptr);
+        }
+
         U& operator*() const;
 
         base_node* ptr;
@@ -125,17 +135,8 @@ private:
      void remove_one(base_node *v);
 };
 
-template<typename T>
-bool operator==(my_list<T>::const_iterator &t) const
-{
-    return (ptr == t.ptr);
-}
 
-template<typename T>
-bool operator!=(my_list<T>::const_iterator &t) const
-{
-    return (ptr != t.ptr);
-}
+
 
 template<typename T>
 template<typename U>
