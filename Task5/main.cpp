@@ -8,15 +8,15 @@ using namespace std;
 
 int main()
 {
-    persistent_set <long long> a;
-    int n = 10000;
+    persistent_set <int> a;
+    int n = 100000;
     for(int i = 0; i < n; i++){
-        long long b = static_cast<long long>(rand()*rand());
-        a.insert(b);
+        //long long b = static_cast<long long>(rand()*rand());
+        a.insert(rand());
     }
-    return 0;
     cout << clock() << endl;
-    persistent_set <long long> b(a);
+    return 0;
+    persistent_set <int> b(a);
     cout << clock() << endl;
     int k = 0;
     while (a.begin() != a.end()) {

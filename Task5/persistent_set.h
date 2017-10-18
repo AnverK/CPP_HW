@@ -5,6 +5,7 @@
 #include <iterator>
 #include <cassert>
 #include <memory>
+#include "smart_pointers/shared_ptr.h"
 using std::cout;
 using  std::endl;
 
@@ -13,11 +14,6 @@ template <typename T>
 class persistent_set
 {
 private:
-    friend void ps_swap(persistent_set<T>& a, persistent_set<T>& b) noexcept        //просто swap подчёркивается в редакторе, и мне не нрав
-    {
-        std::swap(a.fake_node, b.fake_node);
-    }
-
     struct node;
     struct base_node
     {
@@ -137,6 +133,12 @@ private:
 };
 
 template <typename T>
+void swap(persistent_set<T>& a, persistent_set<T>& b) noexcept
+{
+    std::swap(a.fake_node, b.fake_node);
+}
+
+template <typename T>
 persistent_set<T>::persistent_set():
     fake_node()
 {
@@ -246,7 +248,7 @@ typename persistent_set<T>::base_node* persistent_set<T>::find_parent_of_erasabl
         cur = par->right.get();
     }
     while (cur->data != el) {
-//        cout << cur->data << " " << par->data << endl;
+        //        cout << cur->data << " " << par->data << endl;
         if(cur->data < el){
             par->right.reset(new node(cur->left, cur->right, cur->data));
             par = par->right.get();
@@ -332,7 +334,7 @@ void persistent_set<T>::erase(iterator it){
     base_node* par = find_parent_of_erasable((*it));
     if(par->left.get() && par->left.get()->data == (*it)){
         par->left.reset(build_tree_instead_of_erasable(par->left.get()));
-//        par->left.reset();
+        //        par->left.reset();
 
         return;
     }
