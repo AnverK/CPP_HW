@@ -1,37 +1,59 @@
 #include <iostream>
-#include "persistent_set.h"
 #include <time.h>
-#include <set>
-using namespace std;
+#include <vector>
+#include <algorithm>
+#include <cassert>
+#include "smart_pointers/linked_ptr.h"
+#include "smart_pointers/shared_ptr.h"
+#include "persistent_set.h"
 
-//const long long MAX_NUM = LONG_LONG_MAX;
-
+using std::cout;
+using std::endl;
 int main()
 {
-    persistent_set <int> a;
-    int n = 100000;
-    for(int i = 0; i < n; i++){
-        //long long b = static_cast<long long>(rand()*rand());
-        a.insert(rand());
+    srand(time(0));
+    int cnt = 0;
+    while(cnt < 20){
+        cout << "Random test #" << cnt+1 << " " << endl;
+        int n = 5000 + rand()%10000;
+        int max_n = 10*n + rand()%(10*n);
+        persistent_set<int, shared_ptr> a;
+        for(int i = 0; i < n; i++){
+            int b = rand()%max_n;
+            a.insert(b);
+        }
+        persistent_set <int, shared_ptr> b(a), c(a);
+        cout << "a is initialized after " << static_cast<double>(clock())/1000000 << " seconds" << endl;
+
+        std::vector <int> v(max_n);
+        for(int i = 0; i < max_n; i++){
+            v[i] = i;
+        }
+        random_shuffle(v.begin(), v.end());
+        for(int i = 0; i < max_n; i++){
+            a.erase(a.find(v[i]));
+        }
+        cout << "a is clear after " << static_cast<double>(clock())/1000000 << " seconds" << endl;
+        while (a.begin() != a.end()) {
+            a.erase(--a.end());
+        }
+        cout << "a is clear after " << static_cast<double>(clock())/1000000 << " seconds" << endl;
+        while (b.begin() != b.end()) {
+            b.erase(b.begin());
+        }
+        cout << "b is clear after " << static_cast<double>(clock())/1000000 << " seconds" << endl;
+        random_shuffle(v.begin(), v.end());
+        for(int i = 0; i < max_n; i++){
+            c.erase(c.find(v[i]));
+        }
+        cout << "c is clear after " << static_cast<double>(clock())/1000000 << " seconds" << endl;
+        assert(a.begin() == a.end());
+        assert(b.begin() == b.end());
+        assert(c.begin() == c.end());
+        cnt++;
+        cout << endl;
     }
-    cout << clock() << endl;
-    return 0;
-    persistent_set <int> b(a);
-    cout << clock() << endl;
-    int k = 0;
-    while (a.begin() != a.end()) {
-        a.erase(a.begin());
-        k++;
-    }
-    cout << clock() << endl;
-    while (b.begin() != b.end()) {
-        b.erase(b.begin());
-        k--;
-    }
-    cout << clock() << endl;
-    cout << (a.begin() == a.end()) << endl;
-    cout << (b.begin() == b.end()) << endl;
-    cout << k << endl;
+
 
     return 0;
 }
