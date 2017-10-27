@@ -52,7 +52,7 @@ shared_ptr<T>::shared_ptr(shared_ptr<T> && other) noexcept:
 
 template <typename T>
 shared_ptr<T>::shared_ptr(T* ptr):
-    el_ptr(ptr)
+    cnt_ptr(nullptr), el_ptr(ptr)
 {
     if(ptr != nullptr){
         cnt_ptr = new size_t(1);
