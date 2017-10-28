@@ -57,13 +57,13 @@ public:
     struct iterator
     {
         friend struct persistent_set<T, U>;
-        iterator():
+        iterator() noexcept:
             root(nullptr),
             ptr(nullptr)
         {
         }
 
-        iterator(const iterator& it):
+        iterator(const iterator& it) noexcept:
             root(it.root),
             ptr(it.ptr)
         {
