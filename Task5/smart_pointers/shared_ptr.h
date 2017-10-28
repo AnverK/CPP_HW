@@ -23,7 +23,7 @@ public:
 
     void swap(shared_ptr&) noexcept;
 
-    void reset(T*);
+    void reset(T*) noexcept;
 
     friend void swap(shared_ptr& a, shared_ptr& b) noexcept{
         a.swap(b);
@@ -84,7 +84,7 @@ T* shared_ptr<T>::get() const noexcept{
 }
 
 template <typename T>
-void shared_ptr<T>::reset(T* ptr){
+void shared_ptr<T>::reset(T* ptr) noexcept{
     if(el_ptr == ptr){
         return;
     }

@@ -11,7 +11,7 @@ struct linked_ptr
 
     linked_ptr(T*) noexcept;
 
-    linked_ptr(linked_ptr&&);
+    linked_ptr(linked_ptr&&) noexcept;
 
     linked_ptr& operator=(linked_ptr const&) noexcept;
 
@@ -51,7 +51,7 @@ linked_ptr<T>::linked_ptr(T* p) noexcept : el_ptr(p), prev(nullptr), next(nullpt
 {}
 
 template <typename T>
-linked_ptr<T>::linked_ptr(linked_ptr&& other) : el_ptr(other.el_ptr), prev(other.prev), next(other.next)
+linked_ptr<T>::linked_ptr(linked_ptr&& other) noexcept : el_ptr(other.el_ptr), prev(other.prev), next(other.next)
 {
     other.el_ptr = nullptr;
     fix(*this);
