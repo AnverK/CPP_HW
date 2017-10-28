@@ -76,12 +76,12 @@ public:
         iterator operator++(int);
         iterator operator--(int);
 
-        friend bool operator==(iterator a, iterator b)
+        friend bool operator==(iterator a, iterator b) noexcept
         {
             return ((a.ptr == b.ptr) && (a.root== b.root));
         }
 
-        friend bool operator!=(iterator a, iterator b)
+        friend bool operator!=(iterator a, iterator b) noexcept
         {
             return ((a.ptr != b.ptr) || (a.root != b.root));
         }
@@ -92,7 +92,7 @@ public:
         }
 
     private:
-        iterator(base_node const* r, base_node const* p) :
+        iterator(base_node const* r, base_node const* p) noexcept :
             root(r), ptr(p)
         {
         }
@@ -101,18 +101,18 @@ public:
         base_node const* ptr;
     };
 
-    persistent_set();
-    persistent_set(persistent_set const&);
-    persistent_set(persistent_set&&);
-    persistent_set& operator=(persistent_set const&);
-    persistent_set& operator=(persistent_set&&);
+    persistent_set() noexcept;
+    persistent_set(persistent_set const&) noexcept;
+    persistent_set(persistent_set&&) noexcept;
+    persistent_set& operator=(persistent_set const&) noexcept;
+    persistent_set& operator=(persistent_set&&) noexcept;
 
-    iterator find(const T& el);
+    iterator find(const T& el) noexcept;
     std::pair<iterator, bool> insert(const T& el);
     void erase(iterator);
 
-    iterator begin() const;
-    iterator end() const;
+    iterator begin() const noexcept;
+    iterator end() const noexcept;
 
 private:
     base_node fake_node;
@@ -134,32 +134,32 @@ void swap(persistent_set<T, U>& a, persistent_set<T, U>& b) noexcept
 }
 
 template <typename T, template<typename> class U>
-persistent_set<T, U>::persistent_set():
+persistent_set<T, U>::persistent_set() noexcept:
     fake_node()
 {
 }
 
 template <typename T, template<typename> class U>
-persistent_set<T, U>::persistent_set(const persistent_set &other):
+persistent_set<T, U>::persistent_set(const persistent_set &other)noexcept:
     fake_node(other.fake_node)
 {
 }
 
 template <typename T, template<typename> class U>
-persistent_set<T, U>::persistent_set(persistent_set&& other):
+persistent_set<T, U>::persistent_set(persistent_set&& other)noexcept:
     fake_node(std::move(other.fake_node))
 {
 }
 
 template <typename T, template<typename> class U>
-persistent_set<T, U>& persistent_set<T, U>::operator =(persistent_set const& other)
+persistent_set<T, U>& persistent_set<T, U>::operator =(persistent_set const& other)noexcept
 {
     fake_node.left = other.fake_node.left;
     return *this;
 }
 
 template <typename T, template<typename> class U>
-persistent_set<T, U>& persistent_set<T, U>::operator =(persistent_set&& other)
+persistent_set<T, U>& persistent_set<T, U>::operator =(persistent_set&& other)noexcept
 {
     fake_node.left = std::move(other.fake_node.left);
     return *this;
@@ -232,7 +232,7 @@ typename persistent_set<T, U>::iterator persistent_set<T, U>::find(U<node> root,
 
 template <typename T, template<typename> class U>
 
-typename persistent_set<T, U>::iterator persistent_set<T, U>::find(const T& el){
+typename persistent_set<T, U>::iterator persistent_set<T, U>::find(const T& el)noexcept{
     return fake_node.left.get() ? find(fake_node.left, el) : iterator();
 }
 
@@ -360,7 +360,7 @@ void persistent_set<T, U>::erase(iterator it){
 
 template <typename T, template<typename> class U>
 
-typename persistent_set<T, U>::iterator persistent_set<T, U>::begin() const{
+typename persistent_set<T, U>::iterator persistent_set<T, U>::begin() const noexcept{
     base_node const* tmp = &fake_node;
     while (tmp->left.get() != nullptr) {
         tmp = tmp->left.get();
@@ -371,7 +371,7 @@ typename persistent_set<T, U>::iterator persistent_set<T, U>::begin() const{
 
 template <typename T, template<typename> class U>
 
-typename persistent_set<T, U>::iterator persistent_set<T, U>::end() const{
+typename persistent_set<T, U>::iterator persistent_set<T, U>::end() const noexcept{
     return iterator(&fake_node, &fake_node);
 }
 
