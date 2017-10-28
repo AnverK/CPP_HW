@@ -13,7 +13,7 @@ struct linked_ptr
 
     linked_ptr(linked_ptr&&);
 
-    linked_ptr& operator=(linked_ptr&) noexcept;
+    linked_ptr& operator=(linked_ptr const&) noexcept;
 
     linked_ptr& operator=(linked_ptr&&) noexcept;
 
@@ -58,7 +58,7 @@ linked_ptr<T>::linked_ptr(linked_ptr&& other) : el_ptr(other.el_ptr), prev(other
 }
 
 template <typename T>
-linked_ptr<T>& linked_ptr<T>::operator=(linked_ptr& other) noexcept
+linked_ptr<T>& linked_ptr<T>::operator=(linked_ptr const& other) noexcept
 {
     if(other.el_ptr == el_ptr){
         return *this;
