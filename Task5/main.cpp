@@ -17,12 +17,12 @@ int main()
         cout << "Random test #" << cnt+1 << " " << endl;
         int n = 5000 + rand()%10000;
         int max_n = 10*n + rand()%(10*n);
-        persistent_set<int, shared_ptr> a;
+        persistent_set<int, linked_ptr> a;
         for(int i = 0; i < n; i++){
             int b = rand()%max_n;
             a.insert(b);
         }
-        persistent_set <int, shared_ptr> b(a), c(a);
+        persistent_set <int, linked_ptr> b(a), c(a);
         cout << "a is initialized after " << static_cast<double>(clock())/1000000 << " seconds" << endl;
 
         std::vector <int> v(max_n);

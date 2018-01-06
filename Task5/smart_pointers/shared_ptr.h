@@ -11,7 +11,7 @@ public:
     shared_ptr(shared_ptr<T> const&) noexcept;
     shared_ptr(shared_ptr<T> &&) noexcept;
 
-    shared_ptr(T*);
+    explicit shared_ptr(T*);
 
     shared_ptr& operator=(shared_ptr const&) noexcept;
 

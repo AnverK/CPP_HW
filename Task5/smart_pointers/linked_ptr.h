@@ -2,6 +2,7 @@
 #define LINKED_PTR_H
 
 #include <utility>
+#include <cassert>
 template <typename T>
 struct linked_ptr
 {
@@ -9,7 +10,7 @@ struct linked_ptr
 
     linked_ptr(linked_ptr const&) noexcept;
 
-    linked_ptr(T*) noexcept;
+    explicit linked_ptr(T*) noexcept;
 
     linked_ptr(linked_ptr&&) noexcept;
 
@@ -32,15 +33,15 @@ struct linked_ptr
 
 private:
     T* el_ptr;
-    linked_ptr* prev;
-    mutable linked_ptr* next;
+    mutable linked_ptr const* prev;
+    mutable linked_ptr const* next;
 
     void fix(linked_ptr &) noexcept;
 };
 
 template <typename T>
 linked_ptr<T>::linked_ptr(linked_ptr const& other) noexcept :
-    el_ptr(other.el_ptr), prev(&const_cast<linked_ptr&>(other)), next(other.next)
+    el_ptr(other.el_ptr), prev(&other), next(other.next)
 {
     other.next = this;
     fix(*this);
@@ -121,11 +122,9 @@ void linked_ptr<T>::swap(linked_ptr& other) noexcept
 template <typename T>
 void linked_ptr<T>::reset(T* el_ptr) noexcept
 {
-    if(this->el_ptr == el_ptr){
-        return;
-    }
     if (el_ptr)
     {
+        assert(this->el_ptr != el_ptr);
         if (prev == next)
         {
             delete el_ptr;
