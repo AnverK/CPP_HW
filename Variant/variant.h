@@ -253,7 +253,7 @@ private:
     static const size_t data_size = static_max<sizeof(T0), sizeof(Ts)...>::value;
     static const size_t data_align = static_max<alignof(T0), alignof(Ts)...>::value;
     
-    using data_t = typename std::aligned_storage<data_size, data_align>::type;
+//    using data_t = typename std::aligned_storage<data_size, data_align>::type;
     
     static inline constexpr size_t invalid_type() {
         return get_type_index<void, T0, Ts...>::value;
