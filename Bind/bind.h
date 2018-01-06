@@ -192,8 +192,12 @@ struct G<placeholder<N> >
 template <typename F, typename ... As>
 struct G<bind_t<F, As...> >
 {
-    G(bind_t<F, As...> fun)
-        : fun(std::move(fun))
+    G(bind_t<F, As...>&& b) :
+        fun(std::move(b))
+    {}
+
+    G(const bind_t<F, As...>& b) :
+        fun(b)
     {}
 
     template <typename ... Bs>
@@ -226,7 +230,7 @@ struct internal_bind_cleaner<const bind_t<F, As...>&>
 template<typename F, typename ... As>
 struct internal_bind_cleaner<bind_t<F, As...>&&>
 {
-    typedef bind_t<F, As...> type;
+    typedef bind_t<F, As...> value;
 };
 
 template<typename T>

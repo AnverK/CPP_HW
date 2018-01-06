@@ -111,7 +111,6 @@ TEST(testBind, moveSimpleFunctionalObject) {
 TEST(testBind, copySimpleFunctionalObject) {
     simpleFo::logger = "";
     simpleFo x;
-    using namespace std;
     auto w = bind(x);
     EXPECT_EQ(simpleFo::logger, "c");
     w();
@@ -174,6 +173,29 @@ TEST(testBind, arrayPlaceholderArgument) {
     w(a);
     EXPECT_EQ(a[0], 10);
     EXPECT_EQ(a[1], 20);
+}
+
+my_struct& rec(my_struct& a, my_struct& b) {
+    return a;
+}
+
+TEST(testBind, recBind) {
+    my_struct::logger = "";
+    my_struct x, y, z;
+    auto w = bind(rec, bind(rec, x, y), z);
+    EXPECT_EQ(my_struct::logger.length(), 5);
+    my_struct::logger = "";
+    w();
+    EXPECT_EQ(my_struct::logger, "");
+}
+
+TEST(testBind, recBind2) {
+    my_struct::logger = "";
+    my_struct x, y;
+    auto w = bind(rec, bind(rec, _1, _2), _1);
+    EXPECT_EQ(my_struct::logger, "");
+    w(x, y);
+    EXPECT_EQ(my_struct::logger, "");
 }
 
 TEST(testCallOnceBind, moveFixedRvalueArgument) {
