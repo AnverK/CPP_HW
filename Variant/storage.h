@@ -7,15 +7,8 @@
 
 inline constexpr std::size_t variant_npos = -1;
 
-
 template <size_t I>
 using build_const = std::integral_constant<size_t, I>;
-
-template <typename T0, typename... Ts>
-constexpr bool all_copy_constructible = std::is_copy_constructible_v<T0> && std::conjunction_v<std::is_copy_constructible<Ts>...>;
-
-template <typename T0, typename... Ts>
-constexpr bool all_move_constructible = std::is_move_constructible_v<T0> && std::conjunction_v<std::is_move_constructible<Ts>...>;
 
 template<bool is_trivially_destructible, typename ... Ts>
 struct storage;
@@ -178,7 +171,7 @@ struct indexed_destroyable_storage: storage_t<Ts...>
     size_t type_id;
     using base = storage_t<Ts...>;
     indexed_destroyable_storage() = default;
-//    indexed_destroyable_storage(indexed_destroyable_storage const&) = default;
+//    indexed_destroyable_storage& (const indexed_destroyable_storage_t&) = default;
     template<size_t I, typename ... Args>
     constexpr indexed_destroyable_storage(build_const<I>, Args&& ... args)
     noexcept(std::is_nothrow_constructible_v<base, build_const<I>, Args...>)
@@ -225,6 +218,8 @@ template<typename ... Ts>
 struct indexed_destroyable_storage<false, Ts...>: indexed_destroyable_storage<true, Ts...>
 {
     using indexed_destroyable_storage<true, Ts...>::indexed_destroyable_storage;
+    using indexed_destroyable_storage<true, Ts...>::operator=;
+
     using indexed_destroyable_storage<true, Ts...>::get_storage;
     using indexed_destroyable_storage<true, Ts...>::ind;
     using indexed_destroyable_storage<true, Ts...>::valueless_by_exception_impl;
@@ -249,6 +244,8 @@ struct moveable_storage: indexed_destroyable_storage_t<Ts...>
 {
     using moveable_base = indexed_destroyable_storage_t<Ts...>;
     using moveable_base::moveable_base;
+
+    moveable_storage(const moveable_storage &other) = default;
 
     moveable_storage(moveable_storage &&other) {
         moveable_base::type_id = other.type_id;
@@ -281,6 +278,8 @@ struct copyable_storage: moveable_storage_t<Ts...>
             copyable_base::move_constructor(copyable_base::type_id, other);
         }
     }
+
+    copyable_storage(copyable_storage &&) = default;
 };
 
 template<typename...Ts>
@@ -293,5 +292,97 @@ struct copyable_storage<false, Ts...>: copyable_storage<true, Ts...>
 
 template<typename... Ts>
 using copyable_storage_t = copyable_storage<std::conjunction_v<std::is_copy_constructible<Ts>...>, Ts...>;
+
+
+template<bool is_move_assignable, typename... Ts>
+struct move_assignable_storage: copyable_storage_t<Ts...>
+{
+    using moveas_base = copyable_storage_t<Ts...>;
+    using moveas_base::moveas_base;
+
+    move_assignable_storage(const move_assignable_storage&) = default;
+    move_assignable_storage(move_assignable_storage&&) = default;
+
+    move_assignable_storage& operator=(const move_assignable_storage&) = default;
+
+    move_assignable_storage& operator=(move_assignable_storage&& other) {
+
+        if(moveas_base::valueless_by_exception_impl() && other.valueless_by_exception_impl()){
+            return *this;
+        }
+        if(other.valueless_by_exception_impl()){
+            moveas_base::reset(moveas_base::ind());
+            moveas_base::type_id = variant_npos;
+            return *this;
+        }
+        if(moveas_base::ind() == other.ind()){
+            moveas_base::move_constructor(moveas_base::type_id, std::move(other));
+            return *this;
+        }
+        try{
+            moveas_base::reset(moveas_base::ind());
+            moveas_base::type_id = other.type_id;
+            moveas_base::move_constructor(moveas_base::ind(), std::move(other));
+        }
+        catch(...){
+            moveas_base::type_id = variant_npos;
+            return this->operator=(move_assignable_storage(other));
+        }
+        return *this;
+    }
+};
+
+template<typename... Ts>
+struct move_assignable_storage<false, Ts...>: move_assignable_storage<true, Ts...>
+{
+    using moveas_base = move_assignable_storage<true, Ts...>;
+    using moveas_base::moveas_base;
+    move_assignable_storage& operator=(move_assignable_storage&& other) = delete;
+};
+
+template<typename... Ts>
+using move_assignable_storage_t = move_assignable_storage<std::conjunction_v<std::is_move_assignable<Ts>...>, Ts...>;
+
+template<bool is_copy_assignable, typename... Ts>
+struct copy_assignable_storage: move_assignable_storage_t<Ts...>
+{
+    using copyas_base = move_assignable_storage_t<Ts...>;
+    using copyas_base::copyas_base;
+    copy_assignable_storage& operator=(const copy_assignable_storage& other){
+        if(copyas_base::valueless_by_exception_impl() && other.valueless_by_exception_impl()){
+            return *this;
+        }
+        if(other.valueless_by_exception_impl()){
+            copyas_base::reset(copyas_base::ind());
+            copyas_base::type_id = variant_npos;
+            return *this;
+        }
+        if(copyas_base::ind() == other.ind()){
+            copyas_base::move_constructor(copyas_base::type_id, other);
+            return *this;
+        }
+        try{
+            copyas_base::reset(copyas_base::ind());
+            copyas_base::type_id = other.type_id;
+            copyas_base::move_constructor(copyas_base::ind(), other);
+        }
+        catch(...){
+            copyas_base::type_id = variant_npos;
+            return this->operator=(copy_assignable_storage(other));
+        }
+        return *this;
+    }
+};
+
+template<typename... Ts>
+struct copy_assignable_storage<false, Ts...>: copy_assignable_storage<true, Ts...>
+{
+    using copyas_base = copy_assignable_storage<true, Ts...>;
+    using copyas_base::copyas_base;
+    copy_assignable_storage& operator=(const copy_assignable_storage& other) = delete;
+};
+
+template<typename... Ts>
+using copy_assignable_storage_t = copy_assignable_storage<std::conjunction_v<std::is_copy_assignable<Ts>...>, Ts...>;
 
 #endif // STORAGE_H

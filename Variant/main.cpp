@@ -1,50 +1,56 @@
-#include <iostream>
 #include "variant.h"
-#include <variant>
 #include <vector>
-using std::string;
-using std::cin;
-using std::cout;
-using std::endl;
-using std::in_place_index_t;
-using std::in_place_type_t;
+#include <iomanip>
 
-struct my_struct
-{
-    int x;
-    my_struct() : x(228) {}
+template<class T> struct always_false : std::false_type {};
+using var_t = variant<int, long, double, std::string>;
 
-    my_struct(const my_struct &) = delete;
-    my_struct(my_struct&&) = delete;
-};
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 int main() {
+    std::vector<var_t> vec = {10,  1.5, "hello"};
+    for(auto& v: vec) {
+        // void visitor, only called for side-effects
+        visit([](auto&& arg){std::cout << arg;}, v);
 
-//    std::vector<int> a(10000, 0);
-//    std::vector<int> b(20000, 4);
-//    std::string s("abacabaafdskfsdajfksdajfkasjfksdajfkasjrqwehrowjklsdajf");
-//    using var_t = variant< std::vector<int>, std::string>;
-//    using var_t = variant<int, double, float>;
+        // value-returning visitor. A common idiom is to return another variant
+        var_t w = visit([](auto&& arg) -> var_t {return arg + arg;}, v);
 
-//    using var2_t = std::variant<int, double, my_struct>;
-//    using var_t = variant<std::vector<int>>;
-//    var_t v(s);
+        std::cout << ". After doubling, variant holds ";
+        // type-matching visitor: can also be a class with 4 overloaded operator()'s
+        visit([](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, int>)
+                std::cout << "int with value " << arg << '\n';
+            else if constexpr (std::is_same_v<T, long>)
+                std::cout << "long with value " << arg << '\n';
+            else if constexpr (std::is_same_v<T, double>)
+                std::cout << "double with value " << arg << '\n';
+            else if constexpr (std::is_same_v<T, std::string>)
+                std::cout << "std::string with value " << std::quoted(arg) << '\n';
+            else
+                static_assert(always_false<T>::value, "non-exhaustive visitor!");
+        }, w);
+    }
 
-//    var_t v2(b);
-//    v2.swap(v);
-//    get<0>(v2);
-//    cout << get<0>(var_t(a)).size() << endl;
-//    cout << get<0>(var)).size() << endl;
-//cout << v.index() << endl;
-//    cout << v2.get<2>().size() << endl;
-//    cout << std::is_constructible_v<var_t> << endl;
-//    var_t v2(b);
+    for (auto& v: vec) {
+        visit(overloaded {
+            [](auto arg) { std::cout << arg << ' '; },
+            [](double arg) { std::cout << std::fixed << arg << ' '; },
+            [](const std::string& arg) { std::cout << std::quoted(arg) << ' '; },
+        }, v);
+    }
 
-//    get<0>(v);
-//    v.swap(v2);
 
-//    v.emplace<int>(0);
-//    v.emplace<std::vector<int>>(a);
-//    v.emplace(std::vector<int>(10000, 0));
+    variant<int, double> a;
+    var_t v1(5);
+    cout << get<int>(a) << endl;
+    var_t v2("ab");
+    v1 = 41;
+    cout << get<0>(v1) << endl;
+
+    v2 = "ab";
+    cout << (v1 < v2) << endl;
     return 0;
 }
