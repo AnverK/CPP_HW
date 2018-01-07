@@ -4,6 +4,8 @@
 #include <utility>
 #include <typeinfo>
 #include <type_traits>
+#include "storage.h"
+#include "variant_alternative.h"
 using std::cout;
 using std::endl;
 
@@ -41,126 +43,7 @@ struct is_specialization<Template<Types...>, Template>: std::true_type
 {};
 
 
-template <size_t I>
-using build_const = std::integral_constant<size_t, I>;
 
-template<bool is_trivially_destructible, typename ... Ts>
-struct storage {
-    void reset(size_t ind)
-    {}
-};
-
-template<typename ... Ts>
-using storage_t = storage<std::conjunction_v<std::is_trivially_destructible<Ts>...>, Ts...>;
-
-template<typename T0, typename ... Ts>
-struct storage<1, T0, Ts...>
-{
-    union
-    {
-        T0 head;
-        storage_t<Ts...> tail;
-    };
-
-    constexpr storage() noexcept(std::is_nothrow_constructible_v<T0>)
-        : head()
-    {}
-
-    template<typename ... Args>
-    constexpr storage(build_const<0>, Args&& ... args) noexcept(std::is_nothrow_constructible_v<T0, Args...>)
-        : head(std::forward<Args>(args)...)
-    {}
-
-    template<size_t I, typename ... Args>
-    constexpr storage(build_const<I>, Args&& ... args)
-    noexcept(std::is_nothrow_constructible_v<storage_t<Ts...>, build_const<I - 1>, Args...>)
-        : tail(build_const<I - 1>{}, std::forward<Args>(args)...)
-    {}
-
-    void reset(size_t ind) noexcept
-    {
-        if (ind == 0)
-        {
-            head.~T0();
-        }
-        else
-        {
-            tail.reset(ind - 1);
-        }
-    }
-
-    constexpr decltype(auto) get(build_const<0>){
-        return std::forward<T0>(head);
-    }
-    template <size_t I>
-    constexpr decltype(auto) get(build_const<I>){
-        return tail.get(build_const<I - 1>{});
-    }
-    template<typename ...Args, typename = std::enable_if_t<std::is_constructible_v<T0, Args...>>>
-    constexpr decltype(auto) set(build_const<0>, Args&&... args){
-        head = T0(args...);
-    }
-    template <size_t I, typename ...Args>
-    constexpr decltype(auto) set(build_const<I>, Args&&... args){
-        return tail.set(build_const<I - 1>{}, std::forward<Args>(args)...);
-    }
-};
-
-
-template<typename T0, typename ... Ts>
-struct storage<0, T0, Ts...>
-{
-    union
-    {
-        T0 head;
-        storage_t<Ts...> tail;
-    };
-
-    constexpr storage() noexcept(std::is_nothrow_constructible_v<T0>)
-        : head()
-    {}
-
-    template<typename ... Args>
-    constexpr storage(build_const<0>, Args&& ... args) noexcept(std::is_nothrow_constructible_v<T0, Args...>)
-        : head(std::forward<Args>(args)...)
-    {}
-
-    template<size_t I, typename ... Args>
-    constexpr storage(build_const<I>, Args&& ... args)
-    noexcept(std::is_nothrow_constructible_v<storage_t<Ts...>, build_const<I - 1>, Args...>)
-        : tail(build_const<I - 1>{}, std::forward<Args>(args)...)
-    {}
-
-    void reset(size_t ind) noexcept
-    {
-        if (ind == 0)
-        {
-            head.~T0();
-        }
-        else
-        {
-            tail.reset(ind - 1);
-        }
-    }
-    constexpr decltype(auto) get(build_const<0>){
-        return std::forward<T0>(head);
-    }
-    template <size_t I>
-    constexpr decltype(auto) get(build_const<I>){
-        return tail.get(build_const<I - 1>{});
-    }
-
-    template <typename ...Args>
-    constexpr decltype(auto) set(build_const<0>, Args&&... args){
-        head = T0(std::forward<T0>(args)...);
-    }
-    template <size_t I, typename ...Args>
-    constexpr decltype(auto) set(build_const<I>, Args&&... args){
-        return tail.set(build_const<I - 1>{}, std::forward<Args>(args)...);
-    }
-
-    ~storage() noexcept {}
-};
 
 
 template<typename T>
@@ -207,34 +90,6 @@ struct get_type_index<U>
     static const size_t value = 0;
 };
 
-
-template <size_t I, typename... Ts>
-struct get_type{
-};
-
-template<size_t I, typename T, typename... Ts>
-struct get_type<I, T, Ts...>
-{
-    typedef typename get_type<I-1, Ts...>::type type;
-};
-
-template<typename T, typename... Ts>
-struct get_type<0, T, Ts...>
-{
-    typedef T type;
-};
-
-template<size_t I>
-struct get_type<I>
-{
-    typedef void type;
-};
-
-template <size_t I, typename... Ts>
-using get_type_t = typename get_type<I, Ts...>::type;
-
-
-
 template<typename T>
 struct is_in_place_index_specialization
 {
@@ -247,127 +102,253 @@ struct is_in_place_index_specialization<std::in_place_index_t<I>>
     static constexpr bool value = 1;
 };
 
+template <typename T0, typename... Ts>
+constexpr bool all_copy_constructible = std::is_copy_constructible_v<T0> && std::conjunction_v<std::is_copy_constructible<Ts>...>;
+
+template <typename T0, typename... Ts>
+constexpr bool all_move_constructible = std::is_move_constructible_v<T0> && std::conjunction_v<std::is_move_constructible<Ts>...>;
+
+class bad_variant_access : public std::exception
+{};
+
 template<typename T0, typename... Ts>
-struct variant{
+struct variant: copyable_storage_t<T0, Ts...>
+{
 private:
-    static const size_t data_size = static_max<sizeof(T0), sizeof(Ts)...>::value;
-    static const size_t data_align = static_max<alignof(T0), alignof(Ts)...>::value;
-    
-//    using data_t = typename std::aligned_storage<data_size, data_align>::type;
-    
-    static inline constexpr size_t invalid_type() {
-        return get_type_index<void, T0, Ts...>::value;
+    using data = copyable_storage_t<T0, Ts...>;
+
+    using data::valueless_by_exception_impl;
+    using data::set_index;
+    using data::ind;
+    using data::reset;
+    using data::move_constructor;
+    using data::copy_constructor;
+
+
+    template <size_t I>
+    using get_type_t = variant_alternative_t<I, variant>;
+
+    void make_valueless() noexcept{
+        index() = invalid_type();
     }
 
-    size_t type_id;
-    storage_t <T0, Ts...> data;
-public:
+    static inline constexpr size_t invalid_type() {
+        //        return variant_npos;
+        return variant_npos;
+    }
 
+public:
     template<typename = std::enable_if_t<std::is_default_constructible_v<T0>>>
     constexpr variant() noexcept(std::is_nothrow_default_constructible_v<T0>)
-        : type_id(get_type_index<T0, T0, Ts...>::value),
-          data()
-    {
-        //        typename get_type<5, T0, Ts...>::type i(1);
-        //        cout << i.size() << endl;
-        //        cout << i({1, 2}) << endl;
-    }
-
-    variant(const variant<T0, Ts...>& other) = default;
-
-    variant(variant<T0, Ts...>&& other) = default;
+        :data(build_const<0>{})
+    {}
 
     template <typename T, typename varT = select_type_t<T, T0, Ts...>,
               typename = std::enable_if_t<
                   !std::is_same_v<std::decay_t<T>, variant> &&
                   std::is_constructible_v<varT, T>>, size_t I = get_type_index<varT, T0, Ts...>::value>
     constexpr variant(T&& t) noexcept(std::is_nothrow_constructible_v<varT, T>):
-        type_id(I),
         data(build_const<I>{}, std::forward<T>(t))
     {}
-
     template <typename T, typename ...Args,
               size_t I = get_type_index<T, T0, Ts...>::value,
               typename = std::enable_if_t<
                   !(I >= invalid_type()) &&                      // < but parsing...
                   std::is_constructible_v<T, Args...>>>
     constexpr variant(std::in_place_type_t<T> t, Args&&... args):
-        type_id(I),
         data(build_const<I>{}, std::forward<Args>(args)...)
     {}
 
-    template <size_t I, typename ...Args, typename T = get_type_t<I, T0, Ts...>,
+    template <size_t I, typename ...Args, typename T = get_type_t<I>,
               typename = std::enable_if_t<
                   !(I >= invalid_type()) &&                       // < but parsing...
                   std::is_constructible_v<T, Args...>
                   >
               >
     constexpr variant(std::in_place_index_t<I>, Args&&... args):
-        type_id(I),
         data(build_const<I>{}, std::forward<Args>(args)...)
     {}
 
     constexpr std::size_t index() const noexcept{
-        return std::min(type_id, invalid_type());
+        return std::min(ind(), invalid_type());
     }
 
-//    variant<T0, Ts...>& operator= (variant<T0, Ts...> old)
-//    {
-//        std::swap(type_id, old.type_id);
-//        std::swap(data, old.data);
+    //    variant<T0, Ts...>& operator= (const variant<T0, Ts...> &other)     //TODO
+    //    {
+    //        if(valueless_by_exception()){
+    //            return *this;
+    //        }
+    //        if(other.valueless_by_exception()){
+    //            data.reset(type_id);
+    //            make_valueless();
+    //            return *this;
+    //        }
+    //        if(type_id == other.type_id){
+    //            data = other.data;
+    //        }
+    //        type_id = other.type_id;
+    //        data = other.data;
+    //        return *this;
+    //    }
 
-//        return *this;
-//    }
+    //        variant<T0, Ts...>& operator= (variant<T0, Ts...> &&other)      //TODO
+    //        {
+    ////            std::swap(data, other.data);
+    //            return *this;
+    //        }
 
-    template<size_t I>
-    constexpr decltype(auto) get(){
-        if(I >= invalid_type() || I != type_id){
-            throw std::bad_cast();
-        }
-        return data.get(build_const<I>{});
+
+    template <typename T, typename... Args, size_t I = get_type_index<T, T0, Ts...>::value,
+              typename = std::enable_if_t<std::is_constructible_v<T, Args...>>>
+    T& emplace(Args&&... args){
+        reset(index());
+        copy_constructor(index(), std::forward<Args>(args)...);
+        return get_storage_data(build_const<I>{}, *this);
+    }
+    template <size_t I, typename... Args, typename T = get_type_t<I>,
+              typename = std::enable_if_t<std::is_constructible_v<T, Args...>>>
+    variant_alternative_t<I, variant>& emplace(Args&&... args){
+        return emplace<T>(std::forward<Args>(args)...);
     }
 
-    template<size_t I, typename ...Args>
-    constexpr void set(Args&&... args){
-        if(I >= invalid_type()){
-            type_id = invalid_type();
-            throw std::bad_cast();
-        }
-        data.reset(type_id);
-        type_id = I;
-        data.set(build_const<I>{}, std::forward<Args>(args)...);
+    constexpr bool valueless_by_exception() const noexcept
+    {
+        return valueless_by_exception_impl();
     }
 
-    template<typename T>
-    constexpr decltype(auto) get(){
-        constexpr size_t index = get_type_index<T, T0, Ts...>::value;
-        if(index >= invalid_type() || index != type_id){
-            type_id = invalid_type();
-            throw std::bad_cast();
+    void swap(variant& rhs) noexcept{
+        if(rhs.valueless_by_exception() && valueless_by_exception()){
+            return;
         }
-        else{
-            return data.get(build_const<index>{});
+        if(index() == rhs.index()){
+            swap_data(index(), *this, rhs);
+            return;
         }
-    }
 
-    template<typename T, typename ...Args, size_t I = get_type_index<T, T0, Ts...>::value>
-    constexpr void set(Args&&... args) {
-//        cout << typeid(T).name() << endl;
-        constexpr size_t index = get_type_index<T, T0, Ts...>::value;
-        if(index == invalid_type()){
-            type_id = invalid_type();
-            throw std::bad_cast();
+        variant buf(std::move(rhs));
+        if(!rhs.valueless_by_exception()){
+            rhs.reset(rhs.index());
         }
-        else{
-            data.reset(type_id);
-            type_id = index;
-            data.set(build_const<index>{}, std::forward<Args>(args)...);
+        rhs.set_index(index());
+        if(!valueless_by_exception()){
+            rhs.move_constructor(index(), std::move(*this));
+        }
+
+        if(valueless_by_exception()){
+            reset(index());
+        }
+        set_index(buf.index());
+        if(!buf.valueless_by_exception()){
+            move_constructor(index(), std::move(buf));
         }
     }
 
-    bool is_valid() {
-        return (type_id < invalid_type());
-    }
 };
+
+
+template <typename T, typename ... Types>
+constexpr bool holds_alternative(const variant<Types...>& v) noexcept
+{
+    return !v.valueless_by_exception() && v.index() == get_type_index<T, Types...>::value;
+}
+
+template <size_t I, typename ... Ts>
+constexpr decltype(auto) get(variant<Ts...>& v)
+{
+    if (v.index() != I){
+        throw bad_variant_access();
+    }
+    return get_storage_data(build_const<I>{}, v.get_storage());
+}
+
+template <size_t I, typename ... Ts>
+constexpr variant_alternative_t<I, variant<Ts...>>&& get(variant<Ts...>&& v){
+    if (v.index() != I){
+        throw bad_variant_access();
+    }
+    return get_storage_data(build_const<I>{}, std::move(v).get_storage());
+}
+
+template <size_t I, typename ... Ts>
+constexpr decltype(auto) get(const variant<Ts...> & v){
+    if (v.index() != I){
+        throw bad_variant_access();
+    }
+    return get_storage_data(build_const<I>{}, v.get_storage());
+}
+
+template <size_t I, typename ... Ts>
+constexpr decltype(auto) get(const variant<Ts...>&& v){
+    if (v.index() != I){
+        throw bad_variant_access();
+    }
+    return get_storage_data(build_const<I>{}, std::move(v).get_storage());
+}
+
+template <typename T, typename ... Ts>
+constexpr decltype(auto) get(variant<Ts...>& v)
+{
+    constexpr size_t I = get_type_index<T, Ts...>();
+    return get<I>(v);
+}
+
+template <typename T, typename ... Ts>
+constexpr decltype(auto) get(variant<Ts...>&& v)
+{
+    constexpr size_t I = get_type_index<T, Ts...>();
+    return get<I>(std::move(v));
+}
+
+template <typename T, typename ... Ts>
+constexpr decltype(auto) get(variant<Ts...> const& v)
+{
+    constexpr size_t I = get_type_index<T, Ts...>();
+    return get<I>(v);
+}
+
+template <typename T, typename ... Ts>
+constexpr decltype(auto) get(variant<Ts...> const&& v)
+{
+    constexpr size_t I = get_type_index<T, Ts...>();
+    return get<I>(std::move(v));
+}
+
+template <size_t I, typename ... Ts>
+constexpr decltype(auto) get_if(variant<Ts...>* pv) noexcept
+{
+    if(I >= sizeof...(Ts)){
+        throw bad_variant_access();
+    }
+    if(pv != nullptr && pv->index() != I){
+        return &get<I>(*pv);
+    }
+    return nullptr;
+}
+
+template <size_t I, typename ... Ts>
+constexpr decltype(auto) get_if(const variant<Ts...>* pv) noexcept
+{
+    if(I >= sizeof...(Ts)){
+        throw bad_variant_access();
+    }
+    if(pv != nullptr && pv->index() != I){
+        return &get<I>(*pv);
+    }
+    return nullptr;
+}
+
+template <typename T, typename ... Ts>
+constexpr decltype(auto) get_if(variant<Ts...>* pv) noexcept
+{
+    constexpr size_t I = get_type_index<T, Ts...>();
+    return get_if<I>(pv);
+}
+
+template <typename T, typename ... Ts>
+constexpr decltype(auto) get_if(const variant<Ts...>* pv) noexcept
+{
+    constexpr size_t I = get_type_index<T, Ts...>();
+    return get_if<I>(pv);
+}
 
 #endif // VARIANT_H

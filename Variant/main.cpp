@@ -14,33 +14,37 @@ struct my_struct
     int x;
     my_struct() : x(228) {}
 
-    my_struct(my_struct const&) = delete;
+    my_struct(const my_struct &) = delete;
+    my_struct(my_struct&&) = delete;
 };
 
 int main() {
-//    int n = 5;
-//    std::string(4.3);
-//    std::vector <int> v({1, 2, 3});
-//    int x = 10;
-////    short p;
-//    size_t st = 1;
-//    variant<int, short, size_t, double, float> t(std::in_place_index_t<0>{}, 1);
 
-//    cout << t.get<int>() << endl;
-//    t.set<double>(1.2);
-//    t.get<int>();
-//    cout << t.get<int>()<< endl;
-    std::string s;
-    variant<int, std::string> v2;
-    v2.set<std::string>(s);
-//    cout << v2.index() << endl;
-//    cout << t.get<0>().size() << endl;
-//    auto tt(t);
-//    variant<string, char, int> tt(t);
-//    t.set<std::vector<int>>(v);
-//    tt.set<1>("abcd");
-//    std::string a;
-//    a = t.get<1>();
-//    cout << tt.get<1>().size() << endl;
+//    std::vector<int> a(10000, 0);
+//    std::vector<int> b(20000, 4);
+//    std::string s("abacabaafdskfsdajfksdajfkasjfksdajfkasjrqwehrowjklsdajf");
+//    using var_t = variant< std::vector<int>, std::string>;
+//    using var_t = variant<int, double, float>;
+
+//    using var2_t = std::variant<int, double, my_struct>;
+//    using var_t = variant<std::vector<int>>;
+//    var_t v(s);
+
+//    var_t v2(b);
+//    v2.swap(v);
+//    get<0>(v2);
+//    cout << get<0>(var_t(a)).size() << endl;
+//    cout << get<0>(var)).size() << endl;
+//cout << v.index() << endl;
+//    cout << v2.get<2>().size() << endl;
+//    cout << std::is_constructible_v<var_t> << endl;
+//    var_t v2(b);
+
+//    get<0>(v);
+//    v.swap(v2);
+
+//    v.emplace<int>(0);
+//    v.emplace<std::vector<int>>(a);
+//    v.emplace(std::vector<int>(10000, 0));
     return 0;
 }
