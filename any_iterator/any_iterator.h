@@ -477,10 +477,10 @@ public:
     friend any_iterator<T2, Tag2> operator--(any_iterator<T2, Tag2> &a, int);
 
     template<typename T2, typename Tag2, typename Cond>
-    friend any_iterator<T2, Tag2> operator+=(any_iterator<T2, Tag2> it, ptrdiff_t n);
+    friend any_iterator<T2, Tag2>& operator+=(any_iterator<T2, Tag2> &it, ptrdiff_t n);
 
     template<typename T2, typename Tag2, typename Cond>
-    friend any_iterator<T2, Tag2> operator-=(any_iterator<T2, Tag2> it, ptrdiff_t n);
+    friend any_iterator<T2, Tag2>& operator-=(any_iterator<T2, Tag2> &it, ptrdiff_t n);
 
     template<typename T2, typename Tag2, typename Cond>
     friend any_iterator<T2, Tag2> operator+(any_iterator<T2, Tag2> it, ptrdiff_t n);
@@ -515,13 +515,13 @@ public:
 //}
 
 template <typename T, typename Tag, typename = std::enable_if_t<std::is_same_v<Tag, std::random_access_iterator_tag>>>
-any_iterator<T, Tag> operator+=(any_iterator<T, Tag> it, ptrdiff_t n){
+any_iterator<T, Tag>& operator+=(any_iterator<T, Tag> &it, ptrdiff_t n){
     it.ops->adder(it.data, n);
     return it;
 }
 
 template <typename T, typename Tag, typename = std::enable_if_t<std::is_same_v<Tag, std::random_access_iterator_tag>>>
-any_iterator<T, Tag> operator-=(any_iterator<T, Tag> it, ptrdiff_t n){
+any_iterator<T, Tag>& operator-=(any_iterator<T, Tag> &it, ptrdiff_t n){
     it.ops->adder(it.data, -n);
     return it;
 }
