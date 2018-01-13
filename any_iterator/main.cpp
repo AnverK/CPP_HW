@@ -197,11 +197,44 @@ TEST(correctness, assign)
     a = b;
 }
 
+TEST(correctness, self_assignment)
+{
+    std::list<int> x = {1, 2, 3};
+    any_forward_iterator<int> a = make_throwing_wrapper(x.begin());
+    a = a;
+    EXPECT_EQ(1, *a);
+}
+
 TEST(correctness, ctor_big)
 {
     int a[5] = {1, 2, 3, 4, 5};
     any_forward_iterator<int> i = make_throwing_wrapper(a + 0);
     //any_forward_iterator<int> end = make_throwing_wrapper(a + 5);
+}
+
+TEST(correctness, ctor_move)
+{
+    std::vector<int> a = {1, 2, 3, 4, 5};
+
+    any_forward_iterator<int> i = a.begin() + 3;
+    any_forward_iterator<int> j = std::move(i);
+    EXPECT_EQ(4, *j);
+}
+
+TEST(correctness, relative_ops)
+{
+    std::vector<int> a = {1, 2, 3, 4, 5};
+
+    any_random_access_iterator<int> const i = a.begin() + 1;
+    any_random_access_iterator<int> const j = a.begin() + 3;
+
+    EXPECT_LT(i, j);
+    EXPECT_LE(i, i);
+    EXPECT_GT(j, i);
+    EXPECT_GE(j, j);
+
+    EXPECT_EQ(i, i);
+    EXPECT_NE(i, j);
 }
 
 TEST(correctness, difference)
@@ -346,8 +379,6 @@ template struct any_iterator<int, std::forward_iterator_tag>;
 template struct any_iterator<int, std::bidirectional_iterator_tag>;
 template struct any_iterator<int, std::random_access_iterator_tag>;
 
-using std::cout;
-using std::endl;
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);

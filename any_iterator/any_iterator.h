@@ -492,16 +492,16 @@ public:
     friend any_iterator<T2, Tag2> operator-(any_iterator<T2, Tag2> it, ptrdiff_t n);
 
     template <typename T2, typename Tag2, typename Cond>
-    friend bool operator<(any_iterator<T2, Tag2> &a, any_iterator<T2, Tag2>& b);
+    friend bool operator<(const any_iterator<T2, Tag2> &a, const any_iterator<T2, Tag2>& b);
 
     template <typename T2, typename Tag2, typename Cond>
-    friend bool operator<=(any_iterator<T2, Tag2> &a, any_iterator<T2, Tag2> &b);
+    friend bool operator<=(const any_iterator<T2, Tag2> &a, const any_iterator<T2, Tag2> &b);
 
     template <typename T2, typename Tag2, typename Cond>
-    friend bool operator>(any_iterator<T2, Tag2> &a, any_iterator<T2, Tag2>& b);
+    friend bool operator>(const any_iterator<T2, Tag2> &a, const any_iterator<T2, Tag2>& b);
 
     template <typename T2, typename Tag2, typename Cond>
-    friend bool operator>=(any_iterator<T2, Tag2> &a, any_iterator<T2, Tag2>& b);
+    friend bool operator>=(const any_iterator<T2, Tag2> &a, const any_iterator<T2, Tag2>& b);
 };
 
 //template <typename T, typename Tag>
@@ -558,7 +558,7 @@ any_iterator<T, Tag> operator-(any_iterator<T, Tag> it, ptrdiff_t n){
 }
 
 template <typename T, typename Tag, typename = std::enable_if_t<std::is_same_v<Tag, std::random_access_iterator_tag>>>
-bool operator<(any_iterator<T, Tag> &a, any_iterator<T, Tag> & b){
+bool operator<(const any_iterator<T, Tag> &a, const any_iterator<T, Tag> & b){
     if(a.ops != b.ops){
         throw bad_iterator();
     }
@@ -566,17 +566,17 @@ bool operator<(any_iterator<T, Tag> &a, any_iterator<T, Tag> & b){
 }
 
 template <typename T, typename Tag, typename = std::enable_if_t<std::is_same_v<Tag, std::random_access_iterator_tag>>>
-bool operator>=(any_iterator<T, Tag> &a, any_iterator<T, Tag> &b){
+bool operator>=(const any_iterator<T, Tag> &a, const any_iterator<T, Tag> &b){
     return !(a < b);
 }
 
 template <typename T, typename Tag, typename = std::enable_if_t<std::is_same_v<Tag, std::random_access_iterator_tag>>>
-bool operator>(any_iterator<T, Tag> &a, any_iterator<T, Tag>& b){
+bool operator>(const any_iterator<T, Tag> &a, const any_iterator<T, Tag>& b){
     return b < a;
 }
 
 template <typename T, typename Tag, typename = std::enable_if_t<std::is_same_v<Tag, std::random_access_iterator_tag>>>
-bool operator<=(any_iterator<T, Tag> &a, any_iterator<T, Tag>& b){
+bool operator<=(const any_iterator<T, Tag> &a,const  any_iterator<T, Tag>& b){
     return !(a > b);
 }
 
