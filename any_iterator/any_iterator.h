@@ -315,7 +315,7 @@ struct any_iterator_base<T, std::random_access_iterator_tag>
 
     T& operator[](ptrdiff_t n) const
     {
-        return *(static_cast<derived&>(*this) + n);
+        return *(static_cast<const derived&>(*this) + n);
     }
 };
 
