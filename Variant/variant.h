@@ -191,7 +191,6 @@ constexpr decltype(auto) get(variant<Ts...> const&& v)
     return get<I>(std::move(v));
 }
 
-
 template<typename T0, typename... Ts>
 struct variant: copy_assignable_storage_t<T0, Ts...>
 {

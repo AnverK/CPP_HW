@@ -52,5 +52,14 @@ int main() {
 
     v2 = "ab";
     cout << (v1 < v2) << endl;
+    //v1 < 5;
     return 0;
+}
+
+#include <variant>
+void f()
+{
+    std::variant<int, std::string> vv;
+    vv < 5;
+
 }
