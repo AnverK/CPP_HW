@@ -313,7 +313,7 @@ struct any_iterator_base<T, std::random_access_iterator_tag>
 {
     using derived = any_iterator<T, std::random_access_iterator_tag>;
 
-    T& operator[](ptrdiff_t n)
+    T& operator[](ptrdiff_t n) const
     {
         return *(static_cast<derived&>(*this) + n);
     }
