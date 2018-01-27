@@ -10,32 +10,32 @@ typedef any_iterator<const int,  std::random_access_iterator_tag> const_iter;
 
 TEST(correctness, empty)
 {
-    my_vector<int> a;
+    any_container<int> a;
 }
 
 TEST(correctness, empty_copy)
 {
-    my_vector<int> a;
-    (my_vector<int>(a));
-    my_list<int> b;
-    (my_list<int>(b));
-    my_deque<int> c;
-    (my_deque<int>(c));
+    any_container<int> a;
+    (any_container<int>(a));
+    any_container<int> b;
+    (any_container<int>(b));
+    any_container<int> c;
+    (any_container<int>(c));
 }
 
 TEST(correctness, empty_move)
 {
-    my_vector<int> a;
-    (my_vector<int>(std::move(a)));
-    my_list<int> b;
-    (my_list<int>(std::move(b)));
-    my_deque<int> c;
-    (my_deque<int>(std::move(c)));
+    any_container<int> a;
+    (any_container<int>(std::move(a)));
+    any_container<int> b;
+    (any_container<int>(std::move(b)));
+    any_container<int> c;
+    (any_container<int>(std::move(c)));
 }
 
 TEST(correctness, empty_assign)
 {
-    my_vector<int> a, b;
+    any_container<int> a, b;
     a = b;
 }
 
@@ -43,8 +43,8 @@ TEST(correctness, self_assignment)
 {
     std::vector<int> x = {1};
     std::deque<size_t> y = {1, 2, 3, 4};
-    my_vector<int> a = x;
-    my_deque<size_t> b = y;
+    any_container<int> a = x;
+    any_container<size_t> b = y;
     EXPECT_EQ(*a.begin(), 1);
     EXPECT_EQ(*b.begin(), 1);
     a = a;
@@ -62,21 +62,21 @@ TEST(correctness, ctor_move)
     std::vector<int> a = {1, 2, 3, 4, 5};
     std::deque<int> b = {1, 2, 3, 4, 5};
 
-    my_vector <int> v = a;
-    my_deque <int> l = b;
+    any_container <int> v = a;
+    any_container <int> l = b;
 
-    my_vector <int> vv = std::move(v);
-    my_deque <int> ll = std::move(l);
+    any_container <int> vv = std::move(v);
+    any_container <int> ll = std::move(l);
     EXPECT_EQ(4, *(vv.begin()+3));
     EXPECT_EQ(2, *(++ll.begin()));
 }
 
 TEST(correctness, insertion){
     std::vector<int> a;
-    my_vector<int> v = a;
+    any_container<int> v = a;
 
     std::deque <int> b;
-    my_deque<int> l = b;
+    any_container<int> l = b;
 
     EXPECT_TRUE(v.cbegin().is_same_type(v.begin()));
     for(int i = 0; i < 10; i++){
@@ -94,7 +94,7 @@ TEST(correctness, insertion){
 
 TEST(correctness, erasion){
     std::vector<int> a;
-    my_vector<int> v = a;
+    any_container<int> v = a;
 
     for(int i = 0; i < 10; i++){
         v.insert(v.begin(), i+1);
@@ -110,13 +110,13 @@ TEST(correctness, erasion){
 
 TEST(correctness, assignment_by_value){
     vector <int> a;
-    my_vector<int> v;
+    any_container<int> v;
     v = a;
 }
 
 TEST(correctness, iterators_comprasion){
     vector <int> a = {1, 2, 3};
-    my_vector <int> v(a);
+    any_container <int> v(a);
     EXPECT_TRUE(v.begin() != v.end());
     EXPECT_TRUE(v.begin() < v.end());
     EXPECT_TRUE(v.begin() <= v.end());
@@ -127,7 +127,7 @@ TEST(correctness, iterators_comprasion){
 
 TEST(correctness, iterators_operations){
     vector <int> a = {1, 2, 3};
-    my_vector <int> v(a);
+    any_container <int> v(a);
     EXPECT_TRUE(static_cast<ptrdiff_t>(v.size()) == v.end()-v.begin());
     EXPECT_TRUE(v.size() == 3);
     iter end = v.end();
@@ -155,24 +155,26 @@ TEST(correctness, iterators_operations){
 
 TEST(correctness, some_asserts)
 {
-    static_assert(!std::is_convertible_v<vector<int>, my_list<int>>);
-    static_assert(!std::is_convertible_v<vector<int>, my_vector<char>>);
-    vector <int> a = {1, 2, 3, 4, 5};
-    list <int> b = {1, 2, 3};
-    my_list<int> l(b);
-    any_iterator<int, std::bidirectional_iterator_tag> it = a.begin();
+    deque <int> a = {1, 2, 3, 4, 5};
+    list <int> b = {6, 7, 8};
+    any_container<int, std::forward_iterator_tag> l(b);
+    EXPECT_EQ(7, *(++l.begin()));
+    l = a;
+    EXPECT_EQ(2, *(++l.begin()));
 //    iter cit = a.cbegin();  //shouldn't work! (no conversion from const to non-const)
-//    l.insert(it, 5);        //shouldn't work! (assert)
-//    l.erase(it);            //shouldn't work! (assert)
-//    any_random_access_iterator<int> it2 = a.cbegin();
-//    any_random_access_iterator<const int> cit2 = a.cbegin();
-//    cout << (it2 == cit2) << endl;
-//    EXPECT_EQ(it2, cit2);
-//    EXPECT_EQ(cit2, it2);
+//    l.insert(a.begin(), 5);        //shouldn't work!
+//    l.erase(a.begin());            //shouldn't work!
+    any_container<const int, std::forward_iterator_tag> cl = l;
+    any_container<int, std::forward_iterator_tag> copyl = l;
+    copyl.erase(copyl.begin());
+    EXPECT_EQ(2, *copyl.begin());
+    EXPECT_EQ(1, *l.begin());
 }
 
 int main(int argc, char *argv[])
 {
+//    correctness_empty_Test();
+//    correctness_some_asserts_Test();
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

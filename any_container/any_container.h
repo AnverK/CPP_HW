@@ -87,6 +87,8 @@ struct base_container_ops
     template<typename I>
     static iter get_beg(container_t &st){
         return get<I>(st).begin();
+//        I i;
+//        std::cout << get<I>(st) << std::endl;
     }
 
     template<typename I>
@@ -120,7 +122,6 @@ struct base_container_ops
     template<typename I>
     static iter ers(const_iter it, container_t &st){
         typedef typename std::remove_reference_t<decltype(get<I>(st))>::const_iterator to;
-//        if(it.is_small_object() ){
         if constexpr(is_small_v<to>){
                 return get<I>(st).erase(reinterpret_cast<to&>(it.get_data()));
         }
@@ -216,7 +217,7 @@ struct func_container_ops {
     }
 };
 
-template <typename T, typename Container, typename Tag = std::random_access_iterator_tag>
+template <typename T, typename Tag = std::random_access_iterator_tag>
 struct any_container;
 
 template <typename InnerContainer>
@@ -225,8 +226,8 @@ struct is_any_container
     static constexpr bool value = false;
 };
 
-template <typename ValueType, typename Container, typename Category>
-struct is_any_container<any_container<ValueType, Container, Category> >
+template <typename ValueType, typename Category>
+struct is_any_container<any_container<ValueType, Category> >
 {
     static constexpr bool value = true;
 };
@@ -245,15 +246,15 @@ typename std::enable_if<!is_small_container_v<InnerContainer>>::type inner_conta
     new (&dst) InnerContainer*(new InnerContainer(std::forward<InnerContainerRef>(it)));
 }
 
-template <typename T, typename Container, typename Tag>
+template <typename T, typename Tag>
 struct any_container{
 private:
-    typedef any_iterator<T, Tag> iter;
-    typedef any_iterator<const T, Tag> const_iter;
     typedef func_container_ops<T, Tag> func_container_ops_t;
     const func_container_ops_t* ops;
     container_t data;
 public:
+    typedef any_iterator<T, Tag> iterator;
+    typedef any_iterator<const T, Tag> const_iterator;
 
     any_container() noexcept:
         ops(func_container_ops_t::get_default_func_ops())
@@ -271,14 +272,17 @@ public:
         ops->mover(std::move(other.data), data);
     }
 
-    any_container(const Container& c):
+    template <typename Container>
+    any_container(const Container& c, typename std::enable_if<(std::is_same_v<Container, any_container<std::remove_const_t<T>, Tag>>)>::type* = nullptr):
         ops(func_container_ops_t::template get_func_ops<std::decay_t<Container>>())
     {
         inner_container_construct<std::decay_t<Container>>(data, c);
-//        inner_container_construct<std::decay_t<Container>>(data, std::forward<Container>(c));
     }
 
-    any_container(Container&& c):
+    template <typename Container>
+    any_container(Container&& c, typename std::enable_if<
+                    !is_any_container<typename std::decay<Container>::type>::value
+                  >::type* = nullptr):
         ops(func_container_ops_t::template get_func_ops<std::decay_t<Container>>())
     {
         inner_container_construct<std::decay_t<Container>>(data, std::forward<Container>(c));
@@ -312,28 +316,28 @@ public:
         *this = std::move(tmp);
     }
 
-    iter begin(){
+    iterator begin(){
         return ops->beg_getter(data);
     }
 
-    iter end(){
+    iterator end(){
         return ops->end_getter(data);
     }
 
-    const_iter cbegin() const noexcept{
+    const_iterator cbegin() const noexcept{
         return ops->beg_getter(const_cast<container_t&>(data));
     }
 
-    const_iter cend() const noexcept{
+    const_iterator cend() const noexcept{
         return ops->end_getter(const_cast<container_t&>(data));
     }
 
-    iter insert(const_iter pos, T const& el){
+    iterator insert(const_iterator pos, T const& el){
         assert(pos.is_same_type(cend()));
         return ops->inserter(pos, el, data);
     }
 
-    iter erase(const_iter pos){
+    iterator erase(const_iterator pos){
         assert(pos.is_same_type(cend()));
         return ops->eraser(std::move(pos), data);
     }
@@ -351,11 +355,11 @@ public:
     }
 };
 
-template<typename T>
-using my_vector = any_container<T, std::vector<T>>;
+//template<typename T>
+//using my_vector = any_container<T, std::vector<T>>;
 
-template<typename T>
-using my_list = any_container<T, std::list<T>, std::bidirectional_iterator_tag>;
+//template<typename T>
+//using my_list = any_container<T, std::list<T>, std::bidirectional_iterator_tag>;
 
-template<typename T>
-using my_deque = any_container<T, std::deque<T>>;
+//template<typename T>
+//using my_deque = any_container<T, std::deque<T>>;
