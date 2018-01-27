@@ -108,7 +108,7 @@ struct base_container_ops
     template<typename I>
     static iter ins(const_iter it, const T& el, container_t &st){
         typedef typename std::remove_reference_t<decltype(get<I>(st))>::const_iterator to;
-        if(it.is_small_object()){
+        if constexpr(is_small_v<to>){
             return get<I>(st).insert(reinterpret_cast<to&>(it.get_data()), el);
         }
         else{
@@ -120,8 +120,9 @@ struct base_container_ops
     template<typename I>
     static iter ers(const_iter it, container_t &st){
         typedef typename std::remove_reference_t<decltype(get<I>(st))>::const_iterator to;
-        if(it.is_small_object() ){
-            return get<I>(st).erase(reinterpret_cast<to&>(it.get_data()));
+//        if(it.is_small_object() ){
+        if constexpr(is_small_v<to>){
+                return get<I>(st).erase(reinterpret_cast<to&>(it.get_data()));
         }
         else{
             return get<I>(st).erase(*reinterpret_cast<to*&>(it.get_data()));

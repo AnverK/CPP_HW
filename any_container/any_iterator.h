@@ -541,7 +541,7 @@ public:
         return ops == other.ops;
     }
 
-    bool is_small_object() const{
+    constexpr bool is_small_object() const{
         return ops->small_checker();
     }
 
