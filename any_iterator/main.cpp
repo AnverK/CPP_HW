@@ -5,12 +5,14 @@
 #include <vector>
 #include "any_iterator.h"
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
 struct throwing_wrapper_base
 {};
 
 std::set<throwing_wrapper_base*> throwing_wrapper_instances;
+size_t number_of_copies = 0;
+size_t number_of_moves = 0;
 
 template <typename InnerIterator>
 struct throwing_wrapper : throwing_wrapper_base
@@ -37,6 +39,7 @@ struct throwing_wrapper : throwing_wrapper_base
     throwing_wrapper(throwing_wrapper const& other)
         : inner(other.inner)
     {
+        ++number_of_copies;
         bool inserted = throwing_wrapper_instances.insert(this).second;
         assert(inserted);
     }
@@ -44,6 +47,7 @@ struct throwing_wrapper : throwing_wrapper_base
     throwing_wrapper(throwing_wrapper&& other)
         : inner(std::move(other.inner))
     {
+        ++number_of_moves;
         bool inserted = throwing_wrapper_instances.insert(this).second;
         assert(inserted);
     }
@@ -152,6 +156,11 @@ struct throwing_wrapper : throwing_wrapper_base
         return lhs.inner > rhs.inner;
     }
 
+    value_type& operator[](std::ptrdiff_t n) const
+    {
+        return inner[n];
+    }
+
 private:
     InnerIterator inner;
 };
@@ -202,6 +211,7 @@ TEST(correctness, self_assignment)
     std::list<int> x = {1, 2, 3};
     any_forward_iterator<int> a = make_throwing_wrapper(x.begin());
     a = a;
+    a = std::move(a);
     EXPECT_EQ(1, *a);
 }
 
@@ -247,6 +257,43 @@ TEST(correctness, difference)
     ++i;
     --j;
     EXPECT_EQ(3, j - i);
+}
+
+TEST(correctness, ctor_lvalue)
+{
+    std::vector<int> a = {1, 2, 3, 4, 5};
+    auto x = make_throwing_wrapper(a.begin());
+
+    size_t old_noc = number_of_copies;
+    std::cout << number_of_moves << " " << number_of_copies << std::endl;
+    any_random_access_iterator<int> y(x);
+//   std::cout << *x << std::endl;
+    std::cout << number_of_moves << " " << number_of_copies << std::endl;
+    EXPECT_EQ(old_noc + 1, number_of_copies);
+}
+
+TEST(correctness, ctor_rvalue)
+{
+    std::vector<int> a;
+    auto x = make_throwing_wrapper(a.begin());
+    size_t old_nom = number_of_moves;
+    any_random_access_iterator<int> y(std::move(x));
+    EXPECT_EQ(old_nom + 1, number_of_moves);
+}
+
+TEST(correctness, conversions)
+{
+    std::vector<int> a = {1, 2, 3};
+    any_random_access_iterator<int> i = a.begin();
+    any_bidirectional_iterator<int> j = i;
+    any_forward_iterator<int> k = j;
+    EXPECT_EQ(1, *k);
+    ++k;
+    EXPECT_EQ(2, *k);
+    ++k;
+    EXPECT_EQ(3, *k);
+    static_assert(!std::is_convertible<any_forward_iterator<int>, any_bidirectional_iterator<int>>::value);
+    static_assert(!std::is_convertible<any_bidirectional_iterator<int>, any_random_access_iterator<int>>::value);
 }
 
 TEST(correctness, incdec_big)
@@ -298,6 +345,38 @@ TEST(correctness, assignment)
     ++i;
     i = old;
     EXPECT_EQ(*i, 2);
+}
+
+TEST(correctness, subscript)
+{
+    std::vector<int> a = {1, 2, 3, 4, 5};
+
+    any_random_access_iterator<int> i = make_throwing_wrapper(a.begin() + 2);
+    EXPECT_EQ(1, i[-2]);
+    EXPECT_EQ(2, i[-1]);
+    EXPECT_EQ(3, i[0]);
+    EXPECT_EQ(4, i[1]);
+    EXPECT_EQ(5, i[2]);
+
+    any_random_access_iterator<int> const j = i;
+    EXPECT_EQ(1, j[-2]);
+    EXPECT_EQ(2, j[-1]);
+    EXPECT_EQ(3, j[0]);
+    EXPECT_EQ(4, j[1]);
+    EXPECT_EQ(5, j[2]);
+}
+
+TEST(correctness, add_sub)
+{
+    std::vector<int> a = {1, 2, 3, 4, 5};
+
+    any_random_access_iterator<int> i = make_throwing_wrapper(a.begin());
+
+    EXPECT_EQ(&i, &((i += 2) += 2));
+    EXPECT_EQ(5, *i);
+
+    EXPECT_EQ(&i, &((i -= 2) -= 2));
+    EXPECT_EQ(1, *i);
 }
 
 TEST(correctness, list_1)
@@ -375,12 +454,69 @@ TEST(correctness, vector_2)
     EXPECT_TRUE(i[4] == 5);
 }
 
+TEST(correctness, const_to_nonconst){
+    std::vector<int> a;
+    any_random_access_iterator<int> it = a.begin();
+    any_random_access_iterator<const int> cit = it;
+    cit = it;
+}
+
+TEST(correctness, bool_conversion){
+    std::vector<int> a;
+    any_random_access_iterator<int> it = a.begin();
+    EXPECT_TRUE(bool(it));
+}
+
+TEST(correctness, get_pointer){
+    std::vector<int> a = {1, 2, 3};
+    any_random_access_iterator<int> it = a.begin();
+    int* p = it.operator ->();
+    EXPECT_TRUE(*p == 1);
+}
+
+TEST(correctness, same_types){
+    std::vector<int> a = {1, 2, 3};
+    std::vector<int> b = {1, 2, 3};
+    any_random_access_iterator<int> it = a.begin();
+    any_random_access_iterator<int> it2 = b.end();
+    EXPECT_TRUE(it.is_same_type(it2));
+}
+
+TEST(correctness, minus_n){
+    std::vector<int> a = {1, 2, 3};
+    any_random_access_iterator<int> it = a.end();
+    EXPECT_EQ(3, *(it-1));
+}
+
+TEST(correctness, move_other_category){
+    std::vector<int> a = {1, 2, 3};
+    any_random_access_iterator<int> it = a.begin();
+    any_bidirectional_iterator<int> it2 = std::move(it);
+}
+
+TEST(correctness, const_any_iterator){
+    std::vector<int> a = {1, 2, 3};
+    any_forward_iterator<int> it2 = a.begin();
+    any_forward_iterator<const int> it = a.cbegin();
+
+//    any_forward_iterator<int> it3 = a.cbegin();
+//    it3 = it;
+
+//    any_forward_iterator<const int> it3 = std::move(it);
+//    EXPECT_EQ(1, it.is_same_type(it2));
+}
+
+
 template struct any_iterator<int, std::forward_iterator_tag>;
 template struct any_iterator<int, std::bidirectional_iterator_tag>;
 template struct any_iterator<int, std::random_access_iterator_tag>;
 
 int main(int argc, char *argv[])
 {
+//    std::vector<int> a = {1, 2, 3};
+//    any_forward_iterator<int> it3 = a.cbegin();
+
+//    correctness_const_any_iterator_Test();
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

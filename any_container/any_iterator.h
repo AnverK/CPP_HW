@@ -3,13 +3,12 @@
 #include<type_traits>
 #include <cstddef>
 #include <iterator>
-
+#include <iostream>
 //using std::cout;
 //using std::endl;
 
 struct bad_iterator: std::exception
 {};
-
 
 static constexpr size_t SIZE = sizeof(void*);
 static constexpr size_t ALIGN = sizeof(void*);
@@ -30,11 +29,13 @@ struct base_ops
 {
     template <typename I>
     static typename std::enable_if_t<is_small_v<I>> copy(storage_t const& from, storage_t &to){
+//        std::cout << "small: " << sizeof(I) << std::endl;
         new (&reinterpret_cast<I&>(to)) I(reinterpret_cast<I const&>(from));
     }
 
     template <typename I>
     static typename std::enable_if_t<!is_small_v<I>> copy(storage_t const& from, storage_t &to){
+//        std::cout << "big: " << sizeof(I) << std::endl;
         reinterpret_cast<I*&>(to) = new I(get<I>(from));
     }
 
@@ -120,6 +121,11 @@ struct base_ops
         get<I>(st) += n;
     }
 
+    template <typename I>
+    static bool is_sm(){
+        return is_small_v<I>;
+    }
+
     static void copy_default(storage_t const&, storage_t&){}
     static void mov_default(storage_t &&, storage_t&){}
     static void del_default(storage_t &){}
@@ -131,7 +137,7 @@ struct base_ops
     static void inc_default(storage_t &){throw bad_iterator();}
     static void dec_default(storage_t &){throw bad_iterator();}
     static void add_n_default(storage_t &, ptrdiff_t n){throw bad_iterator();}
-
+    static bool is_sm_default(){return true;}
 };
 
 
@@ -152,6 +158,7 @@ struct func_ops<T, std::forward_iterator_tag>
     using inc_t = void (*)(storage_t &);
     //    using dec_t = void (*)(storage_t &);
     //    using add_n_t = void (*)(storage_t &);
+    using is_sm_t = bool (*)();
 
     copy_t copier;
     move_t mover;
@@ -160,13 +167,17 @@ struct func_ops<T, std::forward_iterator_tag>
     get_value_t value_getter;
     get_c_value_t c_value_getter;
     inc_t incrementer;
+    is_sm_t small_checker;
 
     func_ops(copy_t copier, move_t mover, del_t deleter, is_equal_t eq_checker, get_value_t value_getter,
              get_c_value_t c_value_getter,
-             inc_t incrementer):
+             inc_t incrementer,
+             is_sm_t small_checker
+             ):
         copier(copier), mover(mover), deleter(deleter), eq_checker(eq_checker), value_getter(value_getter),
         c_value_getter(c_value_getter),
-        incrementer(incrementer)
+        incrementer(incrementer),
+        small_checker(small_checker)
     {}
 
     template <typename I>
@@ -178,7 +189,8 @@ struct func_ops<T, std::forward_iterator_tag>
             base_ops<T>::template is_equal<I>,
             base_ops<T>::template get_value<I>,
             base_ops<T>::template get_c_value<I>,
-            base_ops<T>::template inc<I>
+            base_ops<T>::template inc<I>,
+            base_ops<T>::template is_sm<I>
         };
         return &instance;
     }
@@ -191,7 +203,8 @@ struct func_ops<T, std::forward_iterator_tag>
             base_ops<T>::is_equal_default,
             base_ops<T>::get_value_default,
             base_ops<T>::get_c_value_default,
-            base_ops<T>::inc_default
+            base_ops<T>::inc_default,
+            base_ops<T>::is_sm_default
         };
         return &instance;
     }
@@ -208,16 +221,17 @@ struct func_ops<T, std::bidirectional_iterator_tag> :func_ops<T, std::forward_it
     using typename base::get_value_t;
     using typename base::get_c_value_t;
     using typename base::inc_t;
+    using typename base::is_sm_t;
     using dec_t = void (*)(storage_t &);
     dec_t decrementer;
 
     func_ops(copy_t copier, move_t mover, del_t deleter, is_equal_t eq_checker, get_value_t value_getter,
              get_c_value_t c_value_getter,
              inc_t incrementer,
-             dec_t decrementer):
+             dec_t decrementer, is_sm_t small_checker):
         func_ops<T, std::forward_iterator_tag>(copier, mover, deleter, eq_checker, value_getter,
                                                c_value_getter,
-                                               incrementer),
+                                               incrementer, small_checker),
         decrementer(decrementer)
     {}
 
@@ -231,7 +245,8 @@ struct func_ops<T, std::bidirectional_iterator_tag> :func_ops<T, std::forward_it
             base_ops<T>::template get_value<I>,
             base_ops<T>::template get_c_value<I>,
             base_ops<T>::template inc<I>,
-            base_ops<T>::template dec<I>
+            base_ops<T>::template dec<I>,
+            base_ops<T>::template is_sm<I>
         };
         return &instance;
     }
@@ -245,7 +260,8 @@ struct func_ops<T, std::bidirectional_iterator_tag> :func_ops<T, std::forward_it
             base_ops<T>::get_value_default,
             base_ops<T>::get_c_value_default,
             base_ops<T>::inc_default,
-            base_ops<T>::dec_default
+            base_ops<T>::dec_default,
+            base_ops<T>::is_sm_default
         };
         return &instance;
     }
@@ -264,6 +280,7 @@ struct func_ops<T, std::random_access_iterator_tag>: func_ops<T, std::bidirectio
     using typename base::inc_t;
 
     using typename base::dec_t;
+    using typename base::is_sm_t;
 
     using is_less_t = bool (*)(storage_t const&, storage_t const&);
     using diff_t = ptrdiff_t (*)(storage_t const&, storage_t const&);
@@ -275,10 +292,10 @@ struct func_ops<T, std::random_access_iterator_tag>: func_ops<T, std::bidirectio
 
     func_ops(copy_t copier, move_t mover, del_t deleter, is_equal_t eq_checker, is_less_t less_checker, diff_t differ, get_value_t value_getter,
              get_c_value_t c_value_getter,
-             inc_t incrementer, dec_t decrementer, add_n_t adder):
+             inc_t incrementer, dec_t decrementer, add_n_t adder, is_sm_t small_checker):
         func_ops<T, std::bidirectional_iterator_tag>(copier, mover, deleter, eq_checker, value_getter,
                                                      c_value_getter,
-                                                     incrementer, decrementer),
+                                                     incrementer, decrementer, small_checker),
         less_checker(less_checker),
         differ(differ),
         adder(adder)
@@ -297,7 +314,8 @@ struct func_ops<T, std::random_access_iterator_tag>: func_ops<T, std::bidirectio
             base_ops<T>::template get_c_value<I>,
             base_ops<T>::template inc<I>,
             base_ops<T>::template dec<I>,
-            base_ops<T>::template add_n<I>
+            base_ops<T>::template add_n<I>,
+            base_ops<T>::template is_sm<I>
         };
         return &instance;
     }
@@ -314,7 +332,8 @@ struct func_ops<T, std::random_access_iterator_tag>: func_ops<T, std::bidirectio
                     base_ops<T>::get_c_value_default,
                     base_ops<T>::inc_default,
                     base_ops<T>::dec_default,
-                    base_ops<T>::add_n_default
+                    base_ops<T>::add_n_default,
+                    base_ops<T>::is_sm_default
         };
         return &instance;
     }
@@ -375,21 +394,15 @@ struct is_const_pointer<const T*>
     static constexpr bool value = true;
 };
 
-//template <typename T>
-//using is_const_pointer_v = typename is_const_pointer<T>::value;
-
-
 template <typename T, typename Tag>
 struct any_iterator: any_iterator_base<T, Tag>{
 private:
     typedef func_ops<std::remove_const_t<T>, Tag> func_ops_t;
     const func_ops_t* ops;
-
     template <typename OtherValueType, typename OtherCategory>
     friend struct any_iterator;
 
     storage_t data;
-
 public:
 
     typedef T value_type;
@@ -402,13 +415,13 @@ public:
         ops(func_ops_t::get_default_func_ops())
     {}
 
-    any_iterator(const any_iterator &other):
+    any_iterator(const any_iterator &other) noexcept:
         ops(other.ops)
     {
         ops->copier(other.data, data);
     }
 
-    any_iterator(any_iterator &&other):
+    any_iterator(any_iterator &&other) noexcept:
         ops(other.ops)
     {
         ops->mover(std::move(other.data), data);
@@ -419,26 +432,10 @@ public:
                  std::is_convertible<typename std::iterator_traits<typename std::decay<I>::type>::iterator_category*, Tag*>::value
                  && !is_any_iterator<typename std::decay<I>::type>::value
                  && (!is_const_pointer<typename std::iterator_traits<std::remove_reference_t<I>>::pointer>::value || std::is_const_v<T>)
-//                 && !std::is_const_v<typename std::iterator_traits<typename std::decay<I>::type>::value_type*>
                  >::type* = nullptr)
     noexcept(is_small_v<std::decay_t<I>>):
         ops(func_ops_t::template get_func_ops<std::decay_t<I>>())
     {
-//        typedef typename std::iterator_traits<std::remove_reference_t<I>>::value_type to;
-//        std::cout << is_const_pointer<to>::value << std::endl;
-//        to i;
-//        int a = 5;
-//        i = 5;
-//        *i = 4;
-
-//        int b = 6;
-//        i = &b;
-//        i = 4;
-//        std::cout<< i << std::endl;
-//        to i;
-//        int a = 5;
-//        i = &a;
-//        std::cout << i << std::endl;
         inner_construct<std::decay_t<I>>(data, std::forward<I>(it));
     }
 
@@ -521,16 +518,6 @@ public:
         return &ops->c_value_getter(data);
     }
 
-    template <typename TT, typename TTag>
-    friend bool operator ==(const any_iterator<T, Tag> &a, const any_iterator<TT, TTag> &b){
-        return (a.ops == b.ops) && a.ops->eq_checker(a.data, b.data);
-    }
-
-    template <typename TT, typename TTag>
-    friend bool operator !=(const any_iterator<T, Tag> &a, const any_iterator<TT, TTag> &b){
-        return !(a == b);
-    }
-
     any_iterator& operator++(){
         ops->incrementer(data);
         return *this;
@@ -546,13 +533,23 @@ public:
         return data;
     }
 
-    decltype(auto) get_ops(){
+    auto get_ops(){
         return ops;
     }
 
     bool is_same_type(const any_iterator& other) const{
         return ops == other.ops;
     }
+
+    bool is_small_object() const{
+        return ops->small_checker();
+    }
+
+    template<typename T1, typename T2, typename Tag1, typename Tag2>
+    friend bool operator ==(const any_iterator<T1, Tag1> &a, const any_iterator<T2, Tag2>& b);
+
+    template<typename T1, typename T2, typename Tag1, typename Tag2>
+    friend bool operator !=(const any_iterator<T1, Tag1> &a, const any_iterator<T2, Tag2>& b);
 
     template<typename T2, typename Tag2, typename Cond>
     friend ptrdiff_t operator-(const any_iterator<T2, Tag2> &a, const any_iterator<T2, Tag2> &b);
@@ -590,6 +587,16 @@ public:
     template <typename T2, typename Tag2, typename Cond>
     friend bool operator>=(const any_iterator<T2, Tag2> &a, const any_iterator<T2, Tag2>& b);
 };
+
+template<typename T1, typename T2, typename Tag1, typename Tag2>
+bool operator ==(const any_iterator<T1, Tag1> &a, const any_iterator<T2, Tag2>& b){
+    return (a.ops == b.ops) && a.ops->eq_checker(a.data, b.data);
+}
+
+template<typename T1, typename T2, typename Tag1, typename Tag2>
+bool operator !=(const any_iterator<T1, Tag1> &a, const any_iterator<T2, Tag2>& b){
+    return !(a == b);
+}
 
 template <typename T, typename Tag, typename = std::enable_if_t<std::is_same_v<Tag, std::random_access_iterator_tag>>>
 any_iterator<T, Tag>& operator+=(any_iterator<T, Tag> &it, ptrdiff_t n){
